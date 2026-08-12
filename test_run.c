@@ -1,6 +1,18 @@
-#include <stdio.h>
+#include "raylib.h"
+#define width 1450
+#define height 800
+
 int main(){
-    printf("we are charlie kirk\n");
-    printf("skibidi gawk gawk gawk");
-    return 0;
+InitWindow(width,height,"fruitninja");
+
+while(!WindowShouldClose())
+    {
+        BeginDrawing();
+        ClearBackground((Color){90, 45, 30, 255}); //fruit ninja bgc
+        EndDrawing();   
+    }
+
+CloseWindow();
+
+return 0;
 }
