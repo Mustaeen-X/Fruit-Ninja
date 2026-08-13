@@ -34,13 +34,13 @@ int main(void) {
 
   for (int i = 0; i < LENGTH(idles); ++i) {
     char path[50];
-    sprintf(path, "assets/sprites/player-idle-%d.png", i + 1);
+    sprintf(path, "assets/sprites/Fox sprites/player-idle-%d.png", i + 1);
     idles[i] = LoadTexture(path);
   }
 
   for (int i = 0; i < LENGTH(running); ++i) {
     char path[50];
-    sprintf(path, "assets/sprites/player-run-%d.png", i + 1);
+    sprintf(path, "assets/sprites/Fox sprites/player-run-%d.png", i + 1);
     running[i] = LoadTexture(path);
   }
 
