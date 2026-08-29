@@ -8,6 +8,7 @@
 #define ScreenHeight 800
 
 // dhor eita ekta commment korlam. 
+// this is a second comment in 1234 branch. 
 void LoadFruits();
 void DrawFruitpng(Texture2D fruit, float TopleftX, float TopleftY, float fruitwidth);
 void UnloadFruits();
