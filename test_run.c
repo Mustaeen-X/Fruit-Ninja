@@ -7,6 +7,7 @@
 #define ScreenWidth 1450
 #define ScreenHeight 800
 
+// dhor eita ekta commment korlam. 
 void LoadFruits();
 void DrawFruitpng(Texture2D fruit, float TopleftX, float TopleftY, float fruitwidth);
 void UnloadFruits();
