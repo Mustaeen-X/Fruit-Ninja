@@ -5,7 +5,7 @@
 #define DEBUG 0
 #define ScreenWidth 1450
 #define ScreenHeight 800
-
+// here is the 3rd new comment. 
 void LoadFruits();
 void LoadSounds();
 void DrawFruit(Texture2D fruit, float TopleftX, float TopleftY, float fruitwidth, float rotation);
