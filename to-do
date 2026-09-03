@@ -1,0 +1,28 @@
+// for BROHAN (remove after reading) leftclick dhore fruit e dhore rakhle new fruit throw initialize korsi, ur part is to make the fruit sliced and do InitializeFruitThrow() after the sliced pieces fall down
+                // run the code once before changing anything to check
+                // suggestion: either fruits gula 2 separate sliced fruits er parameters niye DrawTexturePro() use kor, or sliced fruits er png banaye assets folder e dhukaye LoadFruits() er for-loop e add kore DrawFruit() use kor
+                // ******pura code reading diye kisu na bujhle AI mar to summarize, age AI ke ei pura code copy paste marbi then ekbare last e boro ekta prompt lekhe disi, oitao last e copypaste marish
+
+
+
+
+                
+
+/*The prompt to give to make AI explain the code:
+
+"Here is our current Raylib project code written by my partner. Please act as a senior game developer doing a hand-off summary for me:
+
+Give a high-level overview of what this code currently accomplishes.
+
+Explain the main loop structure, physics math, texture handling, and collision logic step-by-step.
+
+Highlight visual quirks (like origin points in DrawTexturePro) that I need to be aware of before modifying it.
+
+Break down this code for me function-by-function (main, LoadFruits, InitializeFruitThrow, UpdateFruitThrow, DrawFruit, and UnloadFruits). 
+
+Explain what each function receives, what state variables it modifies, and how the math/rendering logic inside it works.
+
+Explain this Raylib codebase by creating a text-based flowchart/data-flow diagram showing how fruitposition, fruitspeed, mouse inputs, and drawing update every frame.
+Then list the key variables and what they control.
+
+Summarize what is ready to be implemented next."*/
