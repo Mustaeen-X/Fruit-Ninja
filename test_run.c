@@ -7,26 +7,26 @@
 #define DEBUG 0
 #define ScreenWidth 1450
 #define ScreenHeight 1000
-#define Red_BG 245
-#define Green_BG 245
-#define Blue_BG 245
+#define Red_BG 97
+#define Green_BG 50
+#define Blue_BG 24
 #define FruitWidth 150
 #define BombWidth 200
 #define SplatterWidth 500
 
-typedef enum GameState {
+typedef enum GameStatus {
     STATE_MENU,
     STATE_GAMEPLAY,
     STATE_GAMEOVER
-} GameState;
+} GameStatus;
 
-GameState currentState = STATE_MENU;
+GameStatus currentState = STATE_MENU;
 
 int score = 0;
 int highScore = 0;
 int missedFruits = 0;
 bool isNewHighScore = false;
-float gameOverTimer = 0.0f;
+float gameOverTimer = 0;
 
 Texture2D *allocate_TextureMatrix(Texture2D *array, int elements);
 Vector2 *allocate_VectorMatrix(Vector2 *array, int elements);
@@ -35,6 +35,7 @@ void ClearSplatterMatrices();
 void LoadGame();
 void LoadFruits();
 void LoadSounds();
+void GameState();
 void DrawFruit(Texture2D fruit, float TopleftX, float TopleftY, float fruitwidth, float rotation);
 void UnloadFruits();
 void InitializeFruitThrow();
@@ -65,29 +66,12 @@ int main(){
         BeginDrawing();
         Background();
 
-        if (currentState == STATE_GAMEPLAY || currentState == STATE_GAMEOVER) {
-            PreviousSplatters();
-        }
-
-        switch (currentState) {
-            case STATE_MENU:
-                ShowMenu();
-                break;
-            case STATE_GAMEPLAY:
-                PlayGame(dt);
-                DrawScoreAndStrikes();
-                break;
-            case STATE_GAMEOVER:
-                DrawGameOverScreen();
-                break;
-        }
+        GameState();
             
         CustomCursor();
         EndDrawing(); 
     }
 
-    free(PreviousSplatter);
-    free(PreviousSplatterPosition);
     UnloadFruits();
 
     CloseAudioDevice();
@@ -205,6 +189,26 @@ void LoadSounds(){
     fuse = LoadSound("assets/audio/bombfuse.mp3");
 }
 
+void GameState(){
+    float dt=GetFrameTime();
+    if (currentState == STATE_GAMEPLAY || currentState == STATE_GAMEOVER) {
+            PreviousSplatters();
+        }
+
+        switch (currentState) {
+            case STATE_MENU:
+                ShowMenu();
+                break;
+            case STATE_GAMEPLAY:
+                PlayGame(dt);
+                DrawScoreAndStrikes();
+                break;
+            case STATE_GAMEOVER:
+                DrawGameOverScreen();
+                break;
+        }
+}
+
 int Background(){
     ClearBackground((Color){R, G, B, 255});
     R = R > Red_BG ? R-6 : Red_BG;
@@ -230,17 +234,16 @@ void ResetGame() {
 
 void ShowMenu() {
     DrawText("FRUIT NINJA", ScreenWidth/2 - MeasureText("FRUIT NINJA", 70)/2, 200, 70, DARKGRAY);
-    
-    char highText[50];
-    sprintf(highText, "HIGH SCORE: %d", highScore);
-    DrawText(highText, ScreenWidth/2 - MeasureText(highText, 30)/2, 320, 30, GRAY);
+    char hightext[50];
+    sprintf(hightext, "HIGH SCORE: %d", highScore);
+    DrawText(hightext, ScreenWidth/2 - MeasureText(hightext, 30)/2, 320, 30, GRAY);
 
-    Rectangle startButton = { ScreenWidth/2 - 120, 450, 240, 70 };
+    Rectangle startButton = {ScreenWidth/2 - 120, 450, 240, 70};
     Vector2 mousePoint = GetMousePosition();
     bool hovering = CheckCollisionPointRec(mousePoint, startButton);
 
     DrawRectangleRec(startButton, hovering ? DARKGREEN : GREEN);
-    DrawRectangleLinesEx(startButton, 4, DARKGRAY);
+    DrawRectangleLinesEx(startButton, 5, DARKGRAY);
     DrawText("PLAY", startButton.x + startButton.width/2 - MeasureText("PLAY", 35)/2, startButton.y + 18, 35, WHITE);
 
     if (hovering && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -265,7 +268,7 @@ void TriggerGameOver() {
         highScore = score;
         isNewHighScore = true;
     }
-    gameOverTimer = 3.0f;
+    gameOverTimer = 3;
     currentState = STATE_GAMEOVER;
 }
 
@@ -281,9 +284,9 @@ void DrawGameOverScreen() {
     DrawText(TextFormat("FINAL SCORE: %d", score), ScreenWidth/2 - MeasureText(TextFormat("FINAL SCORE: %d", score), 35)/2, 430, 35, WHITE);
 
     gameOverTimer -= GetFrameTime();
-    DrawText(TextFormat("Returning to menu in %d...", (int)ceil(gameOverTimer)), ScreenWidth/2 - MeasureText("Returning to menu in 3...", 20)/2, 530, 20, LIGHTGRAY);
+    DrawText(TextFormat("Returning to menu in %d...", (int)ceil(gameOverTimer)), ScreenWidth/2 - MeasureText("Returning to menu in X...", 20)/2, 530, 20, LIGHTGRAY);
 
-    if (gameOverTimer <= 0.0f) {
+    if (gameOverTimer <= 0) {
         ClearSplatterMatrices();
         currentState = STATE_MENU;
     }
@@ -428,3 +431,8 @@ void UnloadFruits(){
     UnloadTexture(KNIFE);
     UnloadTexture(EMPTY);
 }           // unloads all fruits after window is closed
+
+void UnloadSounds(){
+
+    //
+}
