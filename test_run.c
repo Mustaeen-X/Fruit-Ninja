@@ -18,7 +18,7 @@ typedef enum GameStatus {
     STATE_MENU,
     STATE_GAMEPLAY,
     STATE_GAMEOVER
-} GameStatus;
+} GameStatus;  ///remove and manage this
 
 GameStatus currentState = STATE_MENU;
 
@@ -27,17 +27,20 @@ int highScore = 0;
 int missedFruits = 0;
 bool isNewHighScore = false;
 float gameOverTimer = 0;
+bool playsound = true;
 
 Texture2D *allocate_TextureMatrix(Texture2D *array, int elements);
 Vector2 *allocate_VectorMatrix(Vector2 *array, int elements);
 void InitSplatterMatrices();
-void ClearSplatterMatrices();
 void LoadGame();
 void LoadFruits();
 void LoadSounds();
 void GameState();
-void DrawFruit(Texture2D fruit, float TopleftX, float TopleftY, float fruitwidth, float rotation);
+void DrawAsset(Texture2D fruit, float TopleftX, float TopleftY, float fruitwidth, float rotation);
 void UnloadFruits();
+void UnloadSounds();
+void EmptyTextureMatrix(Texture2D *texture);
+void EmptyVectorMatrix(Vector2 *vector);
 void InitializeFruitThrow();
 void UpdateFruitThrow(int sliced, float dt);
 void ShowMenu();
@@ -47,7 +50,7 @@ void CustomCursor();
 void StorePreviousSplatters(int Splatter_Index, Vector2 Splatter_Position);
 void PreviousSplatters();
 void DrawScoreAndStrikes();
-void DrawGameOverScreen();
+void GameOverScreen();
 void ResetGame();
 
 int fruit_index, sliced, storeSplatter=0, splatter_index, splatterX=0, splatterY=0, R=Red_BG, G=Green_BG, B=Blue_BG;
@@ -56,7 +59,7 @@ Vector2 fruitposition, fruitspeed, initialfruitposition, initialfruitspeed, *Pre
 Vector2 gravity={0,2500};
 
 Texture2D fruit[20], deadfruit[20], splatter[9], bomb[4], bombfuse[4], KNIFE, EMPTY, *PreviousSplatter;
-Sound Throw[4], Slash[3], Splat[3], EXPLODE, fuse;
+Sound Throw[4], Slash[3], Splat[3], EXPLODE, fuse, GameOver, HIGHSCORE, MENU;
 
 int main(){
     LoadGame();
@@ -82,11 +85,13 @@ int main(){
 
 Texture2D *allocate_TextureMatrix(Texture2D *array, int elements){
     array = (Texture2D *)malloc(elements*sizeof(Texture2D));
+    for (int i = 0 ; i < elements ; i++) array[i] = EMPTY;
     return array;
 }
 
 Vector2 *allocate_VectorMatrix(Vector2 *array, int elements){
     array = (Vector2 *)malloc(elements*sizeof(Vector2));
+    for (int i = 0 ; i < elements ; i++) array[i] = (Vector2){0,0};
     return array;
 }
 
@@ -103,14 +108,6 @@ void LoadGame(){
 void InitSplatterMatrices(){
     PreviousSplatter = allocate_TextureMatrix(PreviousSplatter, 10);
     PreviousSplatterPosition = allocate_VectorMatrix(PreviousSplatterPosition, 10);
-    ClearSplatterMatrices();
-}
-
-void ClearSplatterMatrices(){
-    for(int i = 0; i < 10; i++) {
-        PreviousSplatter[i].id = 0;
-        PreviousSplatterPosition[i] = (Vector2){ 0, 0 };
-    }
 }
 
 void LoadFruits(){
@@ -187,6 +184,9 @@ void LoadSounds(){
     }
     EXPLODE = LoadSound("assets/audio/explosion.mp3");
     fuse = LoadSound("assets/audio/bombfuse.mp3");
+    GameOver = LoadSound("assets/audio/die.wav");
+    HIGHSCORE = LoadSound("assets/audio/highscore.wav");
+    MENU = LoadSound("assets/audio/menu.ogg");
 }
 
 void GameState(){
@@ -204,7 +204,7 @@ void GameState(){
                 DrawScoreAndStrikes();
                 break;
             case STATE_GAMEOVER:
-                DrawGameOverScreen();
+                GameOverScreen();
                 break;
         }
 }
@@ -221,19 +221,20 @@ int Background(){
 void CustomCursor(){
     int X = GetMouseX(), Y = GetMouseY();
     HideCursor();
-    DrawFruit(KNIFE, X, Y, 100, 0);
+    DrawAsset(KNIFE, X, Y, 100, 0);
 }
 
 void ResetGame() {
     score = 0;
     missedFruits = 0;
     isNewHighScore = false;
-    ClearSplatterMatrices();
     InitializeFruitThrow();
 }
 
 void ShowMenu() {
-    DrawText("FRUIT NINJA", ScreenWidth/2 - MeasureText("FRUIT NINJA", 70)/2, 200, 70, DARKGRAY);
+    if (playsound) PlaySound(MENU);
+    playsound = false;
+    DrawText("FRUIT NINJA", ScreenWidth/2 - MeasureText("FRUIT NINJA", 70)/2, 200, 70, YELLOW);
     char hightext[50];
     sprintf(hightext, "HIGH SCORE: %d", highScore);
     DrawText(hightext, ScreenWidth/2 - MeasureText(hightext, 30)/2, 320, 30, GRAY);
@@ -249,11 +250,12 @@ void ShowMenu() {
     if (hovering && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         ResetGame();
         currentState = STATE_GAMEPLAY;
+        playsound = true;
     }
 }
 
 void DrawScoreAndStrikes() {
-    Color scoreColor = (score > highScore && highScore > 0) ? GOLD : DARKGRAY;
+    Color scoreColor = (score > highScore && highScore > 0) ? GOLD : YELLOW;
     DrawText(TextFormat("SCORE: %d", score), ScreenWidth - 250, 30, 35, scoreColor);
     
     if (score > highScore && highScore > 0) {
@@ -268,11 +270,14 @@ void TriggerGameOver() {
         highScore = score;
         isNewHighScore = true;
     }
+    playsound = true;
     gameOverTimer = 3;
     currentState = STATE_GAMEOVER;
+    EmptyTextureMatrix(PreviousSplatter);
+    EmptyVectorMatrix(PreviousSplatterPosition);
 }
 
-void DrawGameOverScreen() {
+void GameOverScreen() {
     DrawRectangle(0, 0, ScreenWidth, ScreenHeight, (Color){ 0, 0, 0, 200 });
     
     DrawText("GAME OVER", ScreenWidth/2 - MeasureText("GAME OVER", 80)/2, 250, 80, RED);
@@ -283,11 +288,19 @@ void DrawGameOverScreen() {
 
     DrawText(TextFormat("FINAL SCORE: %d", score), ScreenWidth/2 - MeasureText(TextFormat("FINAL SCORE: %d", score), 35)/2, 430, 35, WHITE);
 
+
     gameOverTimer -= GetFrameTime();
     DrawText(TextFormat("Returning to menu in %d...", (int)ceil(gameOverTimer)), ScreenWidth/2 - MeasureText("Returning to menu in X...", 20)/2, 530, 20, LIGHTGRAY);
 
+
+    if (playsound) {
+        if(isNewHighScore) PlaySound(HIGHSCORE);
+        else PlaySound(GameOver);
+        playsound = false;
+        }
+
+    
     if (gameOverTimer <= 0) {
-        ClearSplatterMatrices();
         currentState = STATE_MENU;
     }
 }
@@ -333,7 +346,7 @@ void PlayGame(float dt){
                 R = 255;
                 G = 255;
                 B = 255;
-                score -= 10;
+                score -= 30;
                 if (score < 0) {
                     TriggerGameOver();
                 }
@@ -357,21 +370,21 @@ void UpdateFruitThrow(int sliced, float dt){
         bomb_index = (int)(GetTime() / 0.05) % 4;
         fuse_frame = (int)(GetTime() / 0.5) % 2;
         if (sliced) {
-            DrawFruit(splatter[splatter_index], splatterX, splatterY, SplatterWidth, 0);
-            DrawFruit(EMPTY, fruitposition.x, fruitposition.y, BombWidth, rotation);
+            DrawAsset(splatter[splatter_index], splatterX, splatterY, SplatterWidth, 0);
+            DrawAsset(EMPTY, fruitposition.x, fruitposition.y, BombWidth, rotation);
             if(storeSplatter){
                 StorePreviousSplatters(splatter_index, (Vector2){splatterX, splatterY});
                 storeSplatter = 0;
             }
         }
-        else if (fuse_frame == 1) DrawFruit(bomb[bomb_index], fruitposition.x, fruitposition.y, BombWidth, rotation );
-        else DrawFruit(bombfuse[bomb_index], fruitposition.x, fruitposition.y, BombWidth, rotation);
+        else if (fuse_frame == 1) DrawAsset(bomb[bomb_index], fruitposition.x, fruitposition.y, BombWidth, rotation );
+        else DrawAsset(bombfuse[bomb_index], fruitposition.x, fruitposition.y, BombWidth, rotation);
     }
     else{
-        if(!sliced) DrawFruit(fruit[fruit_index], fruitposition.x, fruitposition.y, FruitWidth, rotation);
+        if(!sliced) DrawAsset(fruit[fruit_index], fruitposition.x, fruitposition.y, FruitWidth, rotation);
         else{
-            DrawFruit(splatter[splatter_index], splatterX, splatterY, SplatterWidth, 0);
-            DrawFruit(deadfruit[fruit_index], fruitposition.x, fruitposition.y, FruitWidth, rotation);
+            DrawAsset(splatter[splatter_index], splatterX, splatterY, SplatterWidth, 0);
+            DrawAsset(deadfruit[fruit_index], fruitposition.x, fruitposition.y, FruitWidth, rotation);
             if(storeSplatter){
                 StorePreviousSplatters(splatter_index, (Vector2){splatterX, splatterY});
                 storeSplatter = 0;
@@ -401,14 +414,10 @@ void StorePreviousSplatters(int Splatter_Index, Vector2 Splatter_Position){
 }
 
 void PreviousSplatters(){
-    for(int i = 9; i >= 0; i--){
-        if (PreviousSplatter[i].id != 0) {
-            DrawFruit(PreviousSplatter[i], PreviousSplatterPosition[i].x, PreviousSplatterPosition[i].y, SplatterWidth, 0);
-        }
-    }
+    for(int i = 9; i >= 0; i--) DrawAsset(PreviousSplatter[i], PreviousSplatterPosition[i].x, PreviousSplatterPosition[i].y, SplatterWidth, 0);
 }
 
-void DrawFruit(Texture2D fruit, float TopleftX, float TopleftY, float fruitwidth, float rotation){
+void DrawAsset(Texture2D fruit, float TopleftX, float TopleftY, float fruitwidth, float rotation){
     Vector2 center = {fruitwidth/2, fruitwidth/2};
     float temp = (fruit.width - fruit.height)/2;
     DrawTexturePro(fruit,
@@ -416,7 +425,7 @@ void DrawFruit(Texture2D fruit, float TopleftX, float TopleftY, float fruitwidth
         (Rectangle){TopleftX, TopleftY + temp, fruitwidth, fruitwidth - temp}, 
         center, rotation , WHITE);
     
-}               // draws each frame of fruit onscreen
+}               // draws each asset with proper (square) sizing and not extending the assets
 
 void UnloadFruits(){
     for (int i = 0 ; i < 20 ; i++) {
@@ -435,4 +444,14 @@ void UnloadFruits(){
 void UnloadSounds(){
 
     //
+}
+
+void EmptyTextureMatrix(Texture2D *texture){
+    for (int i = 0 ; i < 10 ; i++)
+    texture[i] = EMPTY;
+}
+
+void EmptyVectorMatrix(Vector2 *vector){
+    for (int i = 0 ; i < 10 ; i++)
+    vector[i] = (Vector2){0, 0};
 }
