@@ -1,6 +1,5 @@
 //to-do b4 wed (ruhan)
-
-/* remove typedef stuffs if possible and manage accordingly
+/*
 select soundtrack that will play after hitting playbutton
 change 'strikes' to 'lives'
 hitting bombs dont reduce lives, fix it
@@ -12,11 +11,9 @@ add both of our github names in the bottom right corner (shows always)
 add a feature where hitting 10 fruits in a row (NOT BOMBS) says "COMBO: 10!!!" and makes point increments as +15, same for combo20 for +20, combo30 for +25, combo40 for +30
 add a "clicking" soundtrack whenever hovering on play button
 add flickering effect for playbutton (for 2 seconds or so) whenever the playbutton is clicked (not hovered)
-
-
-
-finally, dont use ai bro
 */
+
+
 
 //to-do b4 wed (mustaeen) 
 //you can add more if you want (remove this if seen)

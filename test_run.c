@@ -13,14 +13,12 @@
 #define FruitWidth 150
 #define BombWidth 200
 #define SplatterWidth 500
+#define STATE_MENU 0
+#define STATE_GAMEPLAY 1
+#define STATE_GAMEOVER 2
 
-typedef enum GameStatus {
-    STATE_MENU,
-    STATE_GAMEPLAY,
-    STATE_GAMEOVER
-} GameStatus;  ///remove and manage this
 
-GameStatus currentState = STATE_MENU;
+int currentState = STATE_MENU;
 
 int score = 0;
 int highScore = 0;
