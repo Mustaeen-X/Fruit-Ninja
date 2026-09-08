@@ -31,11 +31,11 @@ Texture2D *allocate_TextureMatrix(Texture2D *array, int elements);
 Vector2 *allocate_VectorMatrix(Vector2 *array, int elements);
 void InitSplatterMatrices();
 void LoadGame();
-void LoadFruits();
+void LoadAssets();
 void LoadSounds();
 void GameState();
 void DrawAsset(Texture2D fruit, float TopleftX, float TopleftY, float fruitwidth, float rotation);
-void UnloadFruits();
+void UnloadAssets();
 void UnloadSounds();
 void EmptyTextureMatrix(Texture2D *texture);
 void EmptyVectorMatrix(Vector2 *vector);
@@ -57,7 +57,7 @@ Vector2 fruitposition, fruitspeed, initialfruitposition, initialfruitspeed, *Pre
 Vector2 gravity={0,2500};
 
 Texture2D fruit[20], deadfruit[20], splatter[9], bomb[4], bombfuse[4], KNIFE, EMPTY, *PreviousSplatter;
-Sound Throw[4], Slash[3], Splat[3], EXPLODE, fuse, GameOver, HIGHSCORE, MENU;
+Sound Throw[4], Slash[3], Splat[3], EXPLODE, fuse, GameOver, HIGHSCORE, MENU, PLAYFN;
 
 int main(){
     LoadGame();
@@ -73,7 +73,7 @@ int main(){
         EndDrawing(); 
     }
 
-    UnloadFruits();
+    UnloadAssets();
 
     CloseAudioDevice();
     CloseWindow();
@@ -99,7 +99,7 @@ void LoadGame(){
     InitAudioDevice();
     SetTargetFPS(60);
     LoadSounds();
-    LoadFruits();
+    LoadAssets();
     InitializeFruitThrow();
 }
 
@@ -108,7 +108,7 @@ void InitSplatterMatrices(){
     PreviousSplatterPosition = allocate_VectorMatrix(PreviousSplatterPosition, 10);
 }
 
-void LoadFruits(){
+void LoadAssets(){
     char path[150];
     Image temp;
     int maxdim;
@@ -185,6 +185,7 @@ void LoadSounds(){
     GameOver = LoadSound("assets/audio/die.wav");
     HIGHSCORE = LoadSound("assets/audio/highscore.wav");
     MENU = LoadSound("assets/audio/menu.ogg");
+    PLAYFN = LoadSound("assets/audio/playgame.ogg");
 }
 
 void GameState(){
@@ -199,7 +200,6 @@ void GameState(){
                 break;
             case STATE_GAMEPLAY:
                 PlayGame(dt);
-                DrawScoreAndStrikes();
                 break;
             case STATE_GAMEOVER:
                 GameOverScreen();
@@ -219,7 +219,7 @@ int Background(){
 void CustomCursor(){
     int X = GetMouseX(), Y = GetMouseY();
     HideCursor();
-    DrawAsset(KNIFE, X, Y, 100, 0);
+    DrawAsset(KNIFE, X, Y, 100, 90);
 }
 
 void ResetGame() {
@@ -232,6 +232,7 @@ void ResetGame() {
 void ShowMenu() {
     if (playsound) PlaySound(MENU);
     playsound = false;
+    if (!IsSoundPlaying(MENU)) PlaySound(MENU);
     DrawText("FRUIT NINJA", ScreenWidth/2 - MeasureText("FRUIT NINJA", 70)/2, 200, 70, YELLOW);
     char hightext[50];
     sprintf(hightext, "HIGH SCORE: %d", highScore);
@@ -249,10 +250,15 @@ void ShowMenu() {
         ResetGame();
         currentState = STATE_GAMEPLAY;
         playsound = true;
+        StopSound(MENU);
     }
 }
 
 void DrawScoreAndStrikes() {
+    if(playsound) PlaySound(PLAYFN);
+    playsound = false;
+    if(!IsSoundPlaying(PLAYFN)) PlaySound(PLAYFN);
+
     Color scoreColor = (score > highScore && highScore > 0) ? GOLD : YELLOW;
     DrawText(TextFormat("SCORE: %d", score), ScreenWidth - 250, 30, 35, scoreColor);
     
@@ -264,6 +270,8 @@ void DrawScoreAndStrikes() {
 }
 
 void TriggerGameOver() {
+    if(IsSoundPlaying(PLAYFN)) StopSound(PLAYFN);
+
     if (score > highScore) {
         highScore = score;
         isNewHighScore = true;
@@ -330,6 +338,7 @@ void InitializeFruitThrow(){
 }                   // before each throw, the position and speed parameters are initialized, with the throwing audio and splatter color
 
 void PlayGame(float dt){
+    DrawScoreAndStrikes();
     UpdateFruitThrow(sliced, dt);
 
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) PlaySound(Slash[GetRandomValue(0,2)]);
@@ -367,7 +376,7 @@ void UpdateFruitThrow(int sliced, float dt){
         int bomb_index, fuse_frame;
         bomb_index = (int)(GetTime() / 0.05) % 4;
         fuse_frame = (int)(GetTime() / 0.5) % 2;
-        if (sliced) {
+        if (sliced){
             DrawAsset(splatter[splatter_index], splatterX, splatterY, SplatterWidth, 0);
             DrawAsset(EMPTY, fruitposition.x, fruitposition.y, BombWidth, rotation);
             if(storeSplatter){
@@ -421,11 +430,11 @@ void DrawAsset(Texture2D fruit, float TopleftX, float TopleftY, float fruitwidth
     DrawTexturePro(fruit,
         (Rectangle){0 , 0, fruit.width, fruit.height}, 
         (Rectangle){TopleftX, TopleftY + temp, fruitwidth, fruitwidth - temp}, 
-        center, rotation , WHITE);
-    
-}               // draws each asset with proper (square) sizing and not extending the assets
+        center, rotation, WHITE);
+}
+                   // draws each asset with proper (square) sizing and not extending the assets
 
-void UnloadFruits(){
+void UnloadAssets(){
     for (int i = 0 ; i < 20 ; i++) {
         UnloadTexture(fruit[i]);
         UnloadTexture(deadfruit[i]);
@@ -440,8 +449,17 @@ void UnloadFruits(){
 }           // unloads all fruits after window is closed
 
 void UnloadSounds(){
-
-    //
+    for(int i = 0 ; i < 3 ; i++) {
+        UnloadSound(Throw[i]);
+        UnloadSound(Splat[i]);
+        UnloadSound(Slash[i]);
+    }
+    UnloadSound(EXPLODE);
+    UnloadSound(fuse);
+    UnloadSound(GameOver);
+    UnloadSound(HIGHSCORE);
+    UnloadSound(MENU);
+    UnloadSound(PLAYFN);
 }
 
 void EmptyTextureMatrix(Texture2D *texture){
