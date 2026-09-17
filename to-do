@@ -1,8 +1,6 @@
 //to-do b4 wed (ruhan)
 /*
 select soundtrack that will play after hitting playbutton
-change 'strikes' to 'lives'
-hitting bombs dont reduce lives, fix it
 if bombs are hit, give a message onscreen, preferably bottomleft (e.g. careful! dont hit the bombs!)
 and if fruits are missed to hit (e.g. hey! the fruits arent gonna cut themselves!)
 add both of our github names in the bottom right corner (shows always)
@@ -19,13 +17,15 @@ add flickering effect for playbutton (for 2 seconds or so) whenever the playbutt
 //you can add more if you want (remove this if seen)
 
 /* add sliced-assets for deadfruits to show after slashing them
+    add pause keybind
+
 */
 
 //future plans
 add a rulepage (that will show if an icon is clicked)
+music selection/off option
 add a proper background texture (current one is bland)
 add a leaderboard
 'difficulty' levels for points above 100, 200, 300...
-mouse trailing effect
 add a circular play button (would rotate continuously)
 select better soundtracks and slashing noises
