@@ -13,6 +13,7 @@
 #define FruitWidth 150
 #define BombWidth 200
 #define SplatterWidth 500
+#define KnifeWidth 50
 #define STATE_MENU 0
 #define STATE_GAMEPLAY 1
 #define STATE_GAMEOVER 2
@@ -219,7 +220,7 @@ int Background(){
 void CustomCursor(){
     int X = GetMouseX(), Y = GetMouseY();
     HideCursor();
-    DrawAsset(KNIFE, X, Y, 100, 90);
+    DrawAsset(KNIFE, X, Y, KnifeWidth, 90);
 }
 
 void ResetGame() {
