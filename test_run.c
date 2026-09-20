@@ -10,7 +10,7 @@
 #define Red_BG 97
 #define Green_BG 50
 #define Blue_BG 24
-#define FruitWidth 100
+#define FruitWidth 120
 #define BombWidth 130
 #define SplatterWidth 250
 #define KnifeWidth 70
@@ -364,15 +364,15 @@ void PlayGame(float dt){
 
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) PlaySound(Slash[GetRandomValue(0,2)]);
 
-    if(IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !sliced){
-        splatterX = GetMouseX();
-        splatterY = GetMouseY(); 
+    if(IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !sliced && (GetMouseX() > 0) && GetMouseX() < ScreenWidth && GetMouseY() > 0 && GetMouseY() < ScreenHeight){
+        splatterX = fruitposition.x;
+        splatterY = fruitposition.y; 
 
         KnifeVelocity = (Vector2){GetMouseDelta().x/dt, GetMouseDelta().y/dt};
         RelativeVelocity = Vector2Subtract(KnifeVelocity, fruitspeed);
 
-        if((GetMouseX() > fruitposition.x-100 && GetMouseX() < fruitposition.x+100 ) && ( GetMouseY() > fruitposition.y-100 && GetMouseY() < fruitposition.y+100)){
-            if ((pow((RelativeVelocity.x),2) + pow((RelativeVelocity.y),2)) > 3600000 ) flag = 1;
+        if((GetMouseX() > fruitposition.x-FruitWidth/2 && GetMouseX() < fruitposition.x+FruitWidth/2 ) && ( GetMouseY() > fruitposition.y-FruitWidth/2 && GetMouseY() < fruitposition.y+FruitWidth/2)){
+            if ((pow((RelativeVelocity.x),2) + pow((RelativeVelocity.y),2)) > 900000 ) flag = 1;
         }
 
         if(flag)
