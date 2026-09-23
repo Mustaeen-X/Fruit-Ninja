@@ -1,32 +1,19 @@
-//to-do b4 wed (ruhan)
 /*
-add game pause mechanism (with keybind P)  
-select soundtrack that will play after hitting playbutton
-if bombs are hit, give a message onscreen, preferably bottomleft (e.g. careful! dont hit the bombs!)
-and if fruits are missed to hit (e.g. hey! the fruits arent gonna cut themselves!)
-add both of our github names in the bottom right corner (shows always)
-
-(optional:) 
-add a feature where hitting 10 fruits in a row (NOT BOMBS) says "COMBO: 10!!!" and makes point increments as +15, same for combo20 for +20, combo30 for +25, combo40 for +30
-add a "clicking" soundtrack whenever hovering on play button
-add flickering effect for playbutton (for 2 seconds or so) whenever the playbutton is clicked (not hovered)
-*/
-
-
-
-//to-do b4 wed (mustaeen) 
-//you can add more if you want (remove this if seen)
-
-/* add sliced-assets for deadfruits to show after slashing them
-    add pause keybind
-
-*/
-
-//future plans
-add a rulepage (that will show if an icon is clicked)
-music selection/off option
-add a proper background texture (current one is bland)
+RUHAN's to-do
 add a leaderboard
+
+add flickering effect for playbutton (for 2 seconds or so) whenever the playbutton is clicked (not hovered)
+add both of our github names in the bottom right corner (shows always)
+add a feature where hitting 10 fruits in a row (NOT BOMBS) says "COMBO: 10!!!" and makes point increments as +15, same for combo20 for +20, combo30 for +25, combo40 for +30
+
+MUSTAEEN's to-do
+select soundtrack that will play after hitting playbutton
+add a "clicking" soundtrack whenever hovering on play button
+add sliced-assets for deadfruits to show after slashing them
 'difficulty' levels for points above 100, 200, 300...
+
+
+future plans
+add a proper background texture (current one is bland)
 add a circular play button (would rotate continuously)
 select better soundtracks and slashing noises
