@@ -109,7 +109,7 @@ int GetPersonalHighScore(const char* name);
 int tint=TINT;
 int fruit_throw_count, wave=0, MusicVolume=1, SFXVolume=1, PAUSE=0, Cursor=1, Close=0;
 Vector2 *PreviousSplatterPosition, *Trailpositions;
-Vector2 gravity={0,2500};
+Vector2 gravity={0,1700};
 
 Texture2D fruit[20], deadfruit[20], splatter[9], bomb[4], bombfuse[4], KNIFE, EMPTY, MusicIcon, BACKGROUND, Menu_Map, *PreviousSplatter;
 Sound Throw[4], Slash[3], Splat[3], EXPLODE, fuse, GameOver, HIGHSCORE, MENU, PLAYFN, COUNTDOWN;
