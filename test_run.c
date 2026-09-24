@@ -318,7 +318,7 @@ void ShowMenu() {
         StopSound(MENU);
     }
 
-    DrawRectangleRec(QuitButton, hoveringQuit ? (Color){240, 90, 239, 255} : (Color){255, 100, 252, 255});
+    DrawRectangleRec(QuitButton, hoveringQuit ? (Color){163, 64, 162, 255} : (Color){255, 100, 252, 255});
     DrawRectangleLinesEx(QuitButton, 5, (Color){200, 60, 195, 255});
     DrawText("QUIT GAME", QuitButton.x + QuitButton.width/2 - MeasureText("QUIT GAME", 35)/2, QuitButton.y + 18, 35, WHITE);
     if (hoveringQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) Close = !Close;
