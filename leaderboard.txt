@@ -1,7 +1,9 @@
 testrun 2200
+mustaeen 1880
 meow 975
 Alvee 810
+Ma 735
 Shams 670
 purno 645
+Baba 480
 Supro 220
-mustaeen -10
