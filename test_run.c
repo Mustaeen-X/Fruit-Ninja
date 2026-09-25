@@ -33,8 +33,10 @@
 #define throwspeed 2200
 #define slidespeed 5000
 #define slidedespeed .3
-#define MAX_NAME_LEN 15
+#define MAX_NAME_LEN 10
 #define MAX_PLAYERS 100
+#define SILVER (Color){192,192,192,255}
+#define BRONZE (Color){205,127,50,255}
 
 typedef struct {
     Vector2 position;
@@ -345,7 +347,7 @@ void LoadSounds(){
 void GameState(){
     float dt = GetFrameTime();
 
-    if(IsKeyPressed(KEY_P)) PAUSE = !PAUSE;
+    if(IsKeyPressed(KEY_TAB)) PAUSE = !PAUSE;
     Rectangle pauseBox = {ScreenWidth/2 - 120, ScreenHeight/2 - 35, 250, 100};
     if(PAUSE) if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && CheckCollisionPointRec(GetMousePosition(), pauseBox)) PAUSE = !PAUSE;
     SetMasterVolume(1 - PAUSE*.7);
@@ -545,11 +547,13 @@ void ShowMenu(){
 
 void ShowLeaderboardScreen() {
     DrawRectangle(0, 0, ScreenWidth, ScreenHeight, (Color){ 0, 0, 0, 210 });
-    DrawText("TOP 10 SCORES", ScreenWidth/2 - MeasureText("TOP 10 SCORES", 60)/2, 80, 60, GOLD);
+    DrawText("TOP 10 SCORES", ScreenWidth/2 - MeasureText("TOP 10 SCORES", 60)/2, 80, 60, BEIGE);
     
     for (int i = 0; i < 10; i++) {
         if (i < totalPlayers) {
-            DrawText(TextFormat("%d. %s", i+1, leaderboard[i].name), ScreenWidth/2 - 200, 180 + i*40, 35, WHITE);
+            DrawText(TextFormat("%d. %s", i+1, leaderboard[i].name), ScreenWidth/2 - 200, 180 + i*40, 35,
+            i==0?
+            GOLD:(i==1? SILVER:i==2? BRONZE:WHITE));
             DrawText(TextFormat("%d", leaderboard[i].score), ScreenWidth/2 + 100, 180 + i*40, 35, YELLOW);
         } else {
             DrawText(TextFormat("%d. ---", i+1), ScreenWidth/2 - 200, 180 + i*40, 35, GRAY);
