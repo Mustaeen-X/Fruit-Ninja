@@ -21,18 +21,18 @@
 #define KnifeWidth 70
 #define TrailWidth 10
 #define TrailLength 10
-#define STATE_MENU 0
-#define STATE_GAMEPLAY 1
-#define STATE_GAMEOVER 2
-#define STATE_COUNTDOWN 3
-#define STATE_LEADERBOARD 4
-#define STATE_MENU_EXIT 5
+#define STATE_LOADING 0
+#define STATE_MENU 1
+#define STATE_GAMEPLAY 2
+#define STATE_GAMEOVER 3
+#define STATE_COUNTDOWN 4
+#define STATE_LEADERBOARD 5
+#define STATE_MENU_EXIT 6
 #define strikes 5
 #define maxfruits 10
 #define throwspeed 2200
 #define slidespeed 5000
 #define slidedespeed .3
-
 #define MAX_NAME_LEN 15
 #define MAX_PLAYERS 100
 
@@ -47,7 +47,14 @@ typedef struct {
     float splatterY;
     int storeSplatter;
     int isitonscreen;
-} FruitThrow; 
+} FruitThrow;
+
+typedef struct{
+    Vector2 position;
+    int points;
+    float showtimer;
+    int isitonscreen;
+} ShowScore;
 
 typedef struct {
     char name[MAX_NAME_LEN + 1];
@@ -58,11 +65,13 @@ FruitThrow thrownfruit[maxfruits];
 
 LeaderboardEntry leaderboard[MAX_PLAYERS];
 
+ShowScore scoreshown[10];
+
 char currentPlayer[MAX_NAME_LEN + 1] = "\0";
 
-int fruit_throw_count, wave=0, MusicVolume=1, SFXVolume=1, PAUSE=0, Cursor=1, Close=0, totalPlayers = 0, tint=TINT, score = 0, highScore = 0, missedFruits = 0, lastComboHit = 0, comboCount = 0, currentState = STATE_MENU;;
+int fruit_throw_count, wave=0, MusicVolume=1, SFXVolume=1, PAUSE=0, Cursor=1, Close=0, totalPlayers = 0, tint=TINT, score = 0, highScore = 0, missedFruits = 0, lastComboHit = 0, comboCount = 0, currentState = STATE_LOADING, pointBonus=10;
 
-float gameOverTimer = 0, countdowntimer = 0, comboDisplayTimer = 0, flickertimer=0;
+float gameOverTimer = 0, countdowntimer = 0, comboDisplayTimer = 0, flickertimer=0, scoreslidetimer=0, scoreslidespeed=0, scoretextX, striketextX=0, strikeslidespeed, pointshowmaxtimer=1, loadingtimer=7;
 
 bool typingName = false, isNewHighScore = false;
 
@@ -75,16 +84,16 @@ Vector2 *PreviousSplatterPosition, *Trailpositions, gravity={0,throwspeed}, slid
 Color *allocate_ColorMatrix(Color *array, int elements);
 Color *TrailColor;
 
-Rectangle nameBox = {ScreenWidth/2 - 120, 220, 240, 45};
-Rectangle lbButton = {ScreenWidth/2 - 120, 280, 240, 60};
-Rectangle PlayButton = {ScreenWidth/2 - 120, 360, 240, 70};
-Rectangle QuitButton = {ScreenWidth/2 - 120, 450, 240, 70};
+Rectangle nameBox = {ScreenWidth/2+20, 360, 280, 70};
+Rectangle lbButton = {ScreenWidth/2+20, 455, 280, 70};
+Rectangle PlayButton = {ScreenWidth/2-300, 360, 280, 70};
+Rectangle QuitButton = {ScreenWidth/2-300, 455, 280, 70};
 Rectangle SFXButton = {ScreenWidth - 300, ScreenHeight - 220, 70, 70};
 Rectangle MusicButton = {ScreenWidth - 180, ScreenHeight - 220, 70, 70};
 Rectangle CursorButton = {ScreenWidth - 420, ScreenHeight - 220, 70, 70};
 Rectangle backButton = {ScreenWidth/2 - 120, ScreenHeight - 130, 240, 60};
 
-Sound Throw[4], Slash[3], Splat[3], EXPLODE, fuse, GameOver, HIGHSCORE, MENU, PLAYFN, COUNTDOWN, COMBO, SUPERCOMBO;
+Sound Throw[4], Slash[3], Splat[3], EXPLODE, fuse, GameOver, HIGHSCORE, MENU, PLAYFN, COUNTDOWN, COMBO, SUPERCOMBO, PLAYPRESSED;
 
 void InitMatrices();
 void LoadGame();
@@ -100,11 +109,13 @@ void EmptyVectorMatrix(Vector2 *vector, int elements);
 void InitializeFruitThrow(int fruit_number);
 void UpdateFruitThrow();
 int FruitCount(int maxfruitno);
+void LoadingScreen();
 void ShowMenu();
 void ShowLeaderboardScreen();
 int Background();
 void ShowMenuExit();
 void PlayGame();
+void ShowSliceScore(Vector2 sliceposition, int points, int call);
 void CustomCursor();
 void StorePreviousSplatters(int Splatter_Index, Vector2 Splatter_Position);
 void PreviousSplatters();
@@ -325,6 +336,7 @@ void LoadSounds(){
     HIGHSCORE = LoadSound("assets/audio/highscore.wav");
     MENU = LoadSound("assets/audio/menu.ogg");
     PLAYFN = LoadSound("assets/audio/playgame.ogg");
+    PLAYPRESSED = LoadSound("assets/audio/PlayButton.mp3");
     COUNTDOWN = LoadSound("assets/audio/countdown.wav");
     COMBO = LoadSound("assets/audio/combo.mp3");
     SUPERCOMBO = LoadSound("assets/audio/supercombo.mp3");
@@ -342,6 +354,9 @@ void GameState(){
 
     if (!PAUSE) {
         switch (currentState) {
+            case STATE_LOADING:
+                LoadingScreen();
+                break;
             case STATE_MENU:
                 ShowMenu();
                 break;
@@ -399,11 +414,22 @@ void ResetGame() {
     comboCount = 0;
     comboDisplayTimer = 0;
     for (int i = 0; i < maxfruits; i++) thrownfruit[i].isitonscreen = 0;
+    for (int i = 0; i < 10; i++) scoreshown[i].isitonscreen = 0;
     InitializeFruitThrow(0);
 }
 
-void ShowMenu() {
-    if(MusicVolume) if(!IsSoundPlaying(MENU)) PlaySound(MENU);
+void LoadingScreen(){
+    float dt = GetFrameTime();
+    char loadingtext[50];
+    sprintf(loadingtext, "Loading Assets and Sounds... (%.1f%%)", (10-loadingtimer)*10);
+    if(loadingtimer>1) loadingtimer -= dt*2;
+    else if(loadingtimer>0.3) loadingtimer -= dt*0.5;
+    else loadingtimer -= dt*0.1;
+    DrawText(loadingtext, ScreenWidth/2-460, ScreenHeight/2, 50, GRAY);
+    if(loadingtimer<0) currentState = STATE_MENU;
+}
+
+void ShowMenu(){
     if(MusicVolume) if(!IsSoundPlaying(MENU)) PlaySound(MENU);
 
     float dt = GetFrameTime();
@@ -427,13 +453,13 @@ void ShowMenu() {
 
     DrawText("FRUIT NINJA", ScreenWidth/2 - MeasureText("FRUIT NINJA", 70)/2, 120+menuPos.y, 70, YELLOW);
 
-    nameBox.y      = 220 + menuPos.y;
-    lbButton.y     = 280 + menuPos.y;
-    PlayButton.y   = 360 + menuPos.y;
-    QuitButton.y   = 450 + menuPos.y;
-    SFXButton.y    = (ScreenHeight - 220) + menuPos.y;
-    MusicButton.y  = (ScreenHeight - 220) + menuPos.y;
-    CursorButton.y = (ScreenHeight - 220) + menuPos.y;
+    nameBox.y      = 360+menuPos.y;
+    lbButton.y     = 455+menuPos.y;
+    PlayButton.y   = 360+menuPos.y;
+    QuitButton.y   = 455+menuPos.y;
+    SFXButton.y    = (ScreenHeight-220)+menuPos.y;
+    MusicButton.y  = (ScreenHeight-220)+menuPos.y;
+    CursorButton.y = (ScreenHeight-220)+menuPos.y;
 
     bool hoveringName = CheckCollisionPointRec(GetMousePosition(), nameBox);
     bool hoveringLB = CheckCollisionPointRec(GetMousePosition(), lbButton);
@@ -460,20 +486,19 @@ void ShowMenu() {
     DrawRectangleRec(nameBox, typingName ? LIGHTGRAY : RAYWHITE);
     DrawRectangleLinesEx(nameBox, 3, typingName ? RED : DARKGRAY);
     if (strlen(currentPlayer) == 0 && !typingName) {
-        DrawText("Enter Name...", nameBox.x + 10, nameBox.y + 12, 20, GRAY);
-    } else {
-        DrawText(currentPlayer, nameBox.x + 10, nameBox.y + 12, 25, DARKGRAY);
-    }
+        DrawText("Enter Name...", nameBox.x + 16, nameBox.y + (nameBox.height - 35) / 2, 35, GRAY);
+    } else DrawText(currentPlayer, nameBox.x + 16, nameBox.y + (nameBox.height - 35) / 2, 35, typingName? DARKGRAY:DARKGREEN);
 
     DrawRectangleRec(lbButton, hoveringLB ? ORANGE : GOLD);
     DrawRectangleLinesEx(lbButton, 4, DARKGRAY);
-    DrawText("LEADERBOARD", lbButton.x + lbButton.width/2 - MeasureText("LEADERBOARD", 25)/2, lbButton.y + 18, 25, WHITE);
+    DrawText("LEADERBOARD", lbButton.x + (lbButton.width - MeasureText("LEADERBOARD", 35)) / 2, lbButton.y + (lbButton.height - 35) / 2, 35, WHITE);
     if (hoveringLB && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) currentState = STATE_LEADERBOARD;
 
     DrawRectangleRec(PlayButton, (hoveringPLAY || (flickertimer > 0) && (((int)(flickertimer / 0.1)) % 2 == 0))? DARKGREEN : GREEN);
     DrawRectangleLinesEx(PlayButton, 5, DARKGRAY);
-    DrawText("PLAY", PlayButton.x + PlayButton.width/2 - MeasureText("PLAY", 35)/2, PlayButton.y + 18, 35, WHITE);
+    DrawText("PLAY", PlayButton.x + (PlayButton.width - MeasureText("PLAY", 35)) / 2, PlayButton.y + (PlayButton.height - 35) / 2, 35, WHITE);
     if (hoveringPLAY && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        PlaySound(PLAYPRESSED);
         if (strlen(currentPlayer) == 0) strcpy(currentPlayer, "Player");
         highScore = GetPersonalHighScore(currentPlayer);
         currentState = STATE_MENU_EXIT;
@@ -483,7 +508,7 @@ void ShowMenu() {
 
     DrawRectangleRec(QuitButton, hoveringQuit ? (Color){163, 64, 162, 255} : (Color){255, 100, 252, 255});
     DrawRectangleLinesEx(QuitButton, 5, (Color){200, 60, 195, 255});
-    DrawText("QUIT GAME", QuitButton.x + QuitButton.width/2 - MeasureText("QUIT GAME", 35)/2, QuitButton.y + 18, 35, WHITE);
+    DrawText("QUIT GAME", QuitButton.x + (QuitButton.width - MeasureText("QUIT GAME", 35)) / 2, QuitButton.y + (QuitButton.height - 35) / 2, 35, WHITE);
     if (hoveringQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) Close = !Close;
 
     DrawRectangleRec(MusicButton, hoveringTMUSIC? (Color){180, 180, 180, 255} : (Color){220, 220, 220, 255});
@@ -558,29 +583,29 @@ void ShowMenuExit() {
 
     DrawText("FRUIT NINJA", ScreenWidth/2 - MeasureText("FRUIT NINJA", 70)/2, 120 + menuPos.y, 70, YELLOW);
 
-    nameBox.y      = 220 + menuPos.y;
-    lbButton.y     = 280 + menuPos.y;
-    PlayButton.y   = 360 + menuPos.y;
-    QuitButton.y   = 450 + menuPos.y;
-    SFXButton.y    = (ScreenHeight - 220) + menuPos.y;
-    MusicButton.y  = (ScreenHeight - 220) + menuPos.y;
-    CursorButton.y = (ScreenHeight - 220) + menuPos.y;
+    PlayButton.y   = 360+menuPos.y;
+    nameBox.y      = 360+menuPos.y;
+    QuitButton.y   = 455+menuPos.y;
+    lbButton.y     = 455+menuPos.y;
+    SFXButton.y    = (ScreenHeight - 220)+menuPos.y;
+    MusicButton.y  = (ScreenHeight - 220)+menuPos.y;
+    CursorButton.y = (ScreenHeight - 220)+menuPos.y;
 
     DrawRectangleRec(nameBox, RAYWHITE);
     DrawRectangleLinesEx(nameBox, 3, DARKGRAY);
-    DrawText(currentPlayer, nameBox.x + 10, nameBox.y + 12, 25, DARKGRAY);
+    DrawText(currentPlayer, nameBox.x + 16, nameBox.y + (nameBox.height - 35) / 2, 35, DARKGRAY);
 
     DrawRectangleRec(lbButton, GOLD);
     DrawRectangleLinesEx(lbButton, 4, DARKGRAY);
-    DrawText("LEADERBOARD", lbButton.x + lbButton.width/2 - MeasureText("LEADERBOARD", 25)/2, lbButton.y + 18, 25, WHITE);
+    DrawText("LEADERBOARD", lbButton.x + (lbButton.width - MeasureText("LEADERBOARD", 35)) / 2, lbButton.y + (lbButton.height - 35) / 2, 35, WHITE);
 
     DrawRectangleRec(PlayButton, (flickertimer > 0) && (((int)(flickertimer / 0.05)) % 2 == 0)? DARKGREEN:GREEN);
     DrawRectangleLinesEx(PlayButton, 5, DARKGRAY);
-    DrawText("PLAY", PlayButton.x + PlayButton.width/2 - MeasureText("PLAY", 35)/2, PlayButton.y + 18, 35, WHITE);
+    DrawText("PLAY", PlayButton.x + (PlayButton.width - MeasureText("PLAY", 35)) / 2, PlayButton.y + (PlayButton.height - 35) / 2, 35, WHITE);
 
     DrawRectangleRec(QuitButton, (Color){255, 100, 252, 255});
     DrawRectangleLinesEx(QuitButton, 5, (Color){200, 60, 195, 255});
-    DrawText("QUIT GAME", QuitButton.x + QuitButton.width/2 - MeasureText("QUIT GAME", 35)/2, QuitButton.y + 18, 35, WHITE);
+    DrawText("QUIT GAME", QuitButton.x + (QuitButton.width - MeasureText("QUIT GAME", 35)) / 2, QuitButton.y + (QuitButton.height - 35) / 2, 35, WHITE);
 
     DrawRectangleRec(MusicButton, (Color){220, 220, 220, 255});
     DrawRectangleLinesEx(MusicButton, 5, (Color){100, 100, 100, 255});
@@ -598,6 +623,9 @@ void ShowMenuExit() {
         StopSound(MENU);
         if (SFXVolume) PlaySound(COUNTDOWN);
         countdowntimer = 4.2;
+        scoretextX=ScreenWidth;
+        scoreslidetimer=0;
+        scoreslidespeed=0;
         currentState = STATE_COUNTDOWN;
     }
 }
@@ -605,14 +633,33 @@ void ShowMenuExit() {
 void DrawScoreAndStrikes() {
     if(MusicVolume && currentState==STATE_GAMEPLAY) if(!IsSoundPlaying(PLAYFN)) PlaySound(PLAYFN);
 
+    float dt = GetFrameTime();
+
+    float scoreslideacc = 600;
+    if(scoreslidetimer>0){
+        scoreslidetimer -= dt;
+        scoreslidespeed += scoreslideacc*dt;
+        if(scoreslidespeed>0) scoreslidespeed=0;
+        scoretextX += scoreslidespeed*dt;
+        if(scoretextX<1100) scoretextX = 1100;
+    }else scoretextX=1100;
+
+    float strikeslideacc = -800;
+    if(scoreslidetimer>0){
+        strikeslidespeed += strikeslideacc*dt;
+        if(strikeslidespeed<0) strikeslidespeed=0;
+        striketextX += strikeslidespeed*dt;
+        if(striketextX>30) striketextX = 30;
+    }else striketextX=30;
+
     Color scoreColor = (score > highScore && highScore > 0) ? GOLD : YELLOW;
-    DrawText(TextFormat("SCORE: %d", score), ScreenWidth - 250 + countdowntimer*300, 30, 35, scoreColor);
+    DrawText(TextFormat("SCORE: %d", score), scoretextX, 30, 35, scoreColor);
     
     if (score > highScore && highScore > 0) {
         DrawText("NEW PERSONAL BEST!", ScreenWidth - 280, 70, 20, ORANGE);
     }
 
-    DrawText(TextFormat("STRIKES: %d / %d", missedFruits, strikes), 30 - countdowntimer*300, 30, 50, (missedFruits >= 2) ? RED : MAROON);
+    DrawText(TextFormat("STRIKES: %d / %d", missedFruits, strikes), striketextX, 30, 50, (missedFruits >= 2) ? RED : MAROON);
 
     if (comboDisplayTimer > 0) {
         comboDisplayTimer -= GetFrameTime();
@@ -670,6 +717,14 @@ void CountDownScreen() {
     }else if(countdowntimer > 0){
         countdown = "GO!";
         timercolor = GREEN;
+        if(scoreslidetimer<=0 && scoretextX>=ScreenWidth){
+            scoreslidetimer=1;
+            scoreslidespeed=-600;
+            scoretextX=ScreenWidth;
+
+            striketextX=-370;
+            strikeslidespeed=800;
+        }
         DrawScoreAndStrikes();
     }else{
         ResetGame();
@@ -746,6 +801,7 @@ void InitializeFruitThrow(int fruit_number){
 void PlayGame(){
     float dt = GetFrameTime();
     UpdateFruitThrow();
+    ShowSliceScore((Vector2){0,0},0,0);
     if(currentState == STATE_GAMEPLAY) DrawScoreAndStrikes();
 
     int flag=0;
@@ -775,22 +831,22 @@ void PlayGame(){
                 tint = 255;
                 comboCount = 0;
                 score -= 30;
-                if (score < 0) {
-                    TriggerGameOver();
-                }
+                ShowSliceScore(thrownfruit[i].position,-30,1);
+                if (score < 0) TriggerGameOver();
             }
             else {
                 if(SFXVolume) PlaySound(Splat[GetRandomValue(0,2)]);
                 comboCount++;
-                
-                int pointBonus = 10;
+            
                 if (comboCount >= 50) pointBonus = 35;
                 else if (comboCount >= 40) pointBonus = 30;
                 else if (comboCount >= 30) pointBonus = 25;
                 else if (comboCount >= 20) pointBonus = 20;
                 else if (comboCount >= 10) pointBonus = 15;
+                else pointBonus = 10;
                 
                 score += pointBonus;
+                ShowSliceScore(thrownfruit[i].position,pointBonus,1);
 
                 if (comboCount % 10 == 0 && comboCount <= 50) {
                     comboDisplayTimer = 2;
@@ -806,6 +862,47 @@ void PlayGame(){
     }
     }
     }  
+}
+
+void ShowSliceScore(Vector2 sliceposition, int points, int call){
+    if(call) {
+        for (int i = 0; i < 10; i++) {
+        if (!scoreshown[i].isitonscreen) {
+            scoreshown[i].position = sliceposition;
+            scoreshown[i].points = points;
+            scoreshown[i].showtimer = 1;
+            scoreshown[i].isitonscreen = 1;
+            return;
+        }
+    }
+
+    scoreshown[0].position = sliceposition;
+    scoreshown[0].points = points;
+    scoreshown[0].showtimer = 1;
+    scoreshown[0].isitonscreen = 1;
+    }
+    else{
+    float dt = GetFrameTime();
+
+    for (int i = 0; i < 10; i++) {
+        if (!scoreshown[i].isitonscreen) continue;
+
+        scoreshown[i].showtimer -= dt;
+        if (scoreshown[i].showtimer <= 0) {
+            scoreshown[i].isitonscreen = 0;
+            continue;
+        }
+        scoreshown[i].position.y -= 85 * dt;
+
+        float fadetint = scoreshown[i].showtimer /pointshowmaxtimer;
+
+        char pointstext[6];
+        if(scoreshown[i].points != -30) sprintf(pointstext, "+%d", scoreshown[i].points);
+        else sprintf(pointstext, "%d", scoreshown[i].points);
+        DrawText(pointstext, scoreshown[i].position.x-MeasureText(pointstext, 36)/2, scoreshown[i].position.y, 36, scoreshown[i].points==-30? (Color){255,0,0,fadetint*255} : (scoreshown[i].points >= 20? (Color){245,190,64,fadetint*255} : (Color){241,245,118,fadetint*255}));
+    }
+
+}
 }
 
 void UpdateFruitThrow(){
