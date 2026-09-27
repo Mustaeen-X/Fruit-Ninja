@@ -187,7 +187,7 @@ void LoadLeaderboard() {
     totalPlayers = 0;
     FILE *f = fopen("leaderboard.txt", "r");
     if (f) {
-        while (fscanf(f, "%15s %d", leaderboard[totalPlayers].name, &leaderboard[totalPlayers].score) == 2) {
+        while (fscanf(f, "%10s %d", leaderboard[totalPlayers].name, &leaderboard[totalPlayers].score) == 2) {
             totalPlayers++;
             if (totalPlayers >= MAX_PLAYERS) break;
         }
@@ -1021,7 +1021,7 @@ void PlayGame(){
                         else if(comboCount<20) penalty = -50;
                         else if(comboCount<25) penalty = -60;
                         else if(comboCount<30) penalty = -70;
-                        else penalty = 80;
+                        else penalty = -80;
                         score += penalty;
                         comboCount = 0;
                         ShowSliceScore(thrownfruit[i].position,penalty,1);
@@ -1223,10 +1223,9 @@ void DrawTrails(){
 
 void DrawAsset(Texture2D fruit, float CentreX, float CentreY, float fruitwidth, float rotation){
     Vector2 center = {fruitwidth/2, fruitwidth/2};
-    float temp = (fruit.width - fruit.height)/2;
     DrawTexturePro(fruit,
         (Rectangle){0 , 0, fruit.width, fruit.height}, 
-        (Rectangle){CentreX, CentreY + temp, fruitwidth, fruitwidth - temp}, 
+        (Rectangle){CentreX, CentreY, fruitwidth, fruitwidth}, 
         center, rotation, WHITE);
 }
 
@@ -1240,6 +1239,10 @@ void UnloadAssets(){
     UnloadTexture2D(PreviousSplatter, maxSplatters);
     UnloadTexture(KNIFE);
     UnloadTexture(EMPTY);
+    UnloadTexture(WhiteSlash);
+    UnloadTexture(Menu_Map);
+    UnloadTexture(BACKGROUND);
+    UnloadTexture(MusicIcon);
 
     UnloadSounds();
     free(PreviousSplatterPosition);
@@ -1260,6 +1263,10 @@ void UnloadSounds(){
     UnloadSound(HIGHSCORE);
     UnloadSound(MENU);
     UnloadSound(PLAYFN);
+    UnloadSound(PLAYPRESSED);
+    UnloadSound(COUNTDOWN);
+    UnloadSound(COMBO);
+    UnloadSound(SUPERCOMBO);
 }
 
 void UnloadTexture2D(Texture2D *array, int elements){
