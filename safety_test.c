@@ -73,7 +73,7 @@ ShowScore scoreshown[10];
 
 char currentPlayer[MAX_NAME_LEN + 1] = "\0";
 
-int fruit_throw_count, wave=0, MusicVolume=1, SFXVolume=1, PAUSE=0, Cursor=1, Close=0, totalPlayers = 0, tint=TINT, score = 0, highScore = 0, missedFruits = 0, lastComboHit = 0, comboCount = 0, currentState = STATE_MENU, pointBonus=10, PageCount = 1;
+int fruit_throw_count, wave=0, MusicVolume=1, SFXVolume=1, PAUSE=0, Cursor=1, Close=0, totalPlayers = 0, tint=TINT, score = 0, highScore = 0, penalty, missedFruits = 0, lastComboHit = 0, comboCount = 0, currentState = STATE_LOADING, pointBonus=10, PageCount = 1;
 
 float gameOverTimer = 0, countdowntimer = 0, comboDisplayTimer = 0, flickertimer=0, scoreslidetimer=0, scoreslidespeed=0, scoretextX, striketextX=0, strikeslidespeed, pointshowmaxtimer=1, loadingtimer=7;
 
@@ -148,8 +148,8 @@ int main(){
 
         GameState();
 
-        DrawText("ruhanCodes119 | Mustaeen-X", ScreenWidth - MeasureText("ruhanCodes119 | Mustaeen-X", 18) - 15, ScreenHeight - 25, 18, (Color){200, 200, 200, 180});
-
+        DrawText("Mustaeen-X", ScreenWidth - MeasureText("Mustaeen-X", 35) - 55, ScreenHeight - 90, 35, (Color){200, 200, 200, 180});
+        DrawText("ruhanCodes119", ScreenWidth - MeasureText("ruhanCodes119", 35) - 15, ScreenHeight - 40, 35, (Color){200, 200, 200, 180});
         CustomCursor();
         if (currentState == STATE_GAMEPLAY || currentState == STATE_GAMEOVER || currentState == STATE_COUNTDOWN) StoreTrails();
         EndDrawing(); 
@@ -443,8 +443,9 @@ void LoadingScreen(){
     char loadingtext[50];
     sprintf(loadingtext, "Loading Assets and Sounds... (%.1f%%)", (10-loadingtimer)*10);
     if(loadingtimer>1) loadingtimer -= dt*2;
-    else if(loadingtimer>0.3) loadingtimer -= dt*0.5;
-    else loadingtimer -= dt*0.1;
+    else if(loadingtimer>0.3) loadingtimer -= dt;
+    else if(loadingtimer>0.009) loadingtimer -= dt*0.1;
+    else loadingtimer -= dt*0.005;
     DrawText(loadingtext, ScreenWidth/2-460, ScreenHeight/2, 50, GRAY);
     if(loadingtimer<0) currentState = STATE_MENU;
 }
@@ -646,12 +647,12 @@ void ShowMenuExit() {
     DrawRectangleLinesEx(QuitButton, 5, (Color){200, 60, 195, 255});
     DrawText("QUIT GAME", QuitButton.x + (QuitButton.width - MeasureText("QUIT GAME", 35)) / 2, QuitButton.y + (QuitButton.height - 35) / 2, 35, WHITE);
 
-    DrawRectangleRec(HowToPlayButton, (Color){163, 64, 162, 255});
-    DrawRectangleLinesEx(HowToPlayButton, 5, (Color){200, 60, 195, 255});
+    DrawRectangleRec(HowToPlayButton,SKYBLUE);
+    DrawRectangleLinesEx(HowToPlayButton, 5, GRAY);
     DrawText("HOW TO PLAY", HowToPlayButton.x + (HowToPlayButton.width - MeasureText("HOW TO PLAY", 35)) / 2, HowToPlayButton.y + (HowToPlayButton.height - 35) / 2, 35, WHITE);
 
-    DrawRectangleRec(CreditsButton,(Color){163, 64, 162, 255});
-    DrawRectangleLinesEx(CreditsButton, 5, (Color){200, 60, 195, 255});
+    DrawRectangleRec(CreditsButton,YOLK);
+    DrawRectangleLinesEx(CreditsButton, 5, GRAY);
     DrawText("CREDITS", CreditsButton.x + (CreditsButton.width - MeasureText("CREDITS", 35)) / 2, CreditsButton.y + (CreditsButton.height - 35) / 2, 35, WHITE);
 
     DrawRectangleRec(MusicButton, (Color){220, 220, 220, 255});
@@ -731,6 +732,9 @@ void ShowHowToPlay(){
                 sprintf(text, 
                     "It will also break the combo you had for a while.");
                 DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 620, 30, WHITE);
+                sprintf(text, 
+                    "Try to score as high as you can!");
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 700, 30, WHITE);
                 break;
         }
 
@@ -1001,9 +1005,15 @@ void PlayGame(){
                 if(SFXVolume) PlaySound(EXPLODE);
                 StopSound(fuse);
                 tint = 255;
+                if(comboCount<10) penalty = -30;
+                else if(comboCount<15) penalty = -40;
+                else if(comboCount<20) penalty = -50;
+                else if(comboCount<25) penalty = -60;
+                else if(comboCount<30) penalty = -70;
+                else penalty = 80;
+                score += penalty;
                 comboCount = 0;
-                score -= 30;
-                ShowSliceScore(thrownfruit[i].position,-30,1);
+                ShowSliceScore(thrownfruit[i].position,penalty,1);
                 if (score < 0) TriggerGameOver();
             }
             else {
@@ -1069,11 +1079,10 @@ void ShowSliceScore(Vector2 sliceposition, int points, int call){
         float fadetint = scoreshown[i].showtimer /pointshowmaxtimer;
 
         char pointstext[6];
-        if(scoreshown[i].points != -30) sprintf(pointstext, "+%d", scoreshown[i].points);
+        if(scoreshown[i].points > 0) sprintf(pointstext, "+%d", scoreshown[i].points);
         else sprintf(pointstext, "%d", scoreshown[i].points);
         DrawText(pointstext, scoreshown[i].position.x-MeasureText(pointstext, 36)/2, scoreshown[i].position.y, 36, scoreshown[i].points==-30? (Color){255,0,0,fadetint*255} : (scoreshown[i].points >= 20? (Color){245,190,64,fadetint*255} : (Color){241,245,118,fadetint*255}));
     }
-
 }
 }
 
