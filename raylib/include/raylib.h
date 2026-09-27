@@ -183,7 +183,7 @@
 #define GREEN      CLITERAL(Color){ 0, 228, 48, 255 }      // Green
 #define LIME       CLITERAL(Color){ 0, 158, 47, 255 }      // Lime
 #define DARKGREEN  CLITERAL(Color){ 0, 117, 44, 255 }      // Dark Green
-#define SKYBLUE    CLITERAL(Color){ 102, 191, 255, 255 }   // Sky Blue
+#define SKYBLUE    CLITERAL(Color){ 12, 240, 240, 255 }   // Sky Blue
 #define BLUE       CLITERAL(Color){ 0, 121, 241, 255 }     // Blue
 #define DARKBLUE   CLITERAL(Color){ 0, 82, 172, 255 }      // Dark Blue
 #define PURPLE     CLITERAL(Color){ 200, 122, 255, 255 }   // Purple
@@ -192,6 +192,7 @@
 #define BEIGE      CLITERAL(Color){ 211, 176, 131, 255 }   // Beige
 #define BROWN      CLITERAL(Color){ 127, 106, 79, 255 }    // Brown
 #define DARKBROWN  CLITERAL(Color){ 76, 63, 47, 255 }      // Dark Brown
+#define YOLK       CLITERAL(Color) {230, 232, 93 ,255}    // Yolk
 
 #define WHITE      CLITERAL(Color){ 255, 255, 255, 255 }   // White
 #define BLACK      CLITERAL(Color){ 0, 0, 0, 255 }         // Black
