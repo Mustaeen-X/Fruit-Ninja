@@ -43,6 +43,8 @@
 typedef struct {
     Vector2 position;
     Vector2 speed;
+    Vector2 posA,posB;
+    Vector2 speedA,speedB;
     int fruit_index;
     int sliced;
     float rotation;
@@ -51,6 +53,7 @@ typedef struct {
     float splatterY;
     int storeSplatter;
     int isitonscreen;
+    int front;
 } FruitThrow;
 
 typedef struct{
@@ -80,7 +83,7 @@ float gameOverTimer = 0, countdowntimer = 0, comboDisplayTimer = 0, flickertimer
 bool typingName = false, isNewHighScore = false;
 
 Texture2D *allocate_TextureMatrix(Texture2D *array, int elements);
-Texture2D fruit[20], deadfruit[20], splatter[9], bomb[4], bombfuse[4], KNIFE, EMPTY, MusicIcon, BACKGROUND, Menu_Map, WhiteSlash, *PreviousSplatter;
+Texture2D fruit[20], deadfruitA[20], deadfruitB[20], splatter[9], bomb[4], bombfuse[4], KNIFE, EMPTY, MusicIcon, BACKGROUND, Menu_Map, WhiteSlash, *PreviousSplatter;
 
 Vector2 *allocate_VectorMatrix(Vector2 *array, int elements);
 Vector2 *PreviousSplatterPosition, *Trailpositions, gravity={0,throwspeed}, slidingAcc={0,slidespeed}, menuPos={0,-ScreenHeight}, menuSpeed={0,0};
@@ -295,7 +298,14 @@ void LoadAssets(){
         temp = LoadImage(path);
         maxdim = temp.width >= temp.height? temp.width : temp.height;
         ImageResizeCanvas(&temp, maxdim, maxdim, (maxdim - temp.width) / 2 , (maxdim - temp.height) / 2, BLANK);
-        deadfruit[i] = LoadTextureFromImage(temp);
+        deadfruitA[i] = LoadTextureFromImage(temp);
+        UnloadImage(temp);
+
+        sprintf(path, "assets/sprites/fruits/%db.png", i+1);
+        temp = LoadImage(path);
+        maxdim = temp.width >= temp.height? temp.width : temp.height;
+        ImageResizeCanvas(&temp, maxdim, maxdim, (maxdim - temp.width) / 2 , (maxdim - temp.height) / 2, BLANK);
+        deadfruitB[i] = LoadTextureFromImage(temp);
         UnloadImage(temp);
     }
 
@@ -427,8 +437,6 @@ void CustomCursor(){
 }
 
 void ResetGame() {
-    score = 0;
-    missedFruits = 0;
     isNewHighScore = false;
     wave = 1;
     comboCount = 0;
@@ -472,7 +480,7 @@ void ShowMenu(){
     (Rectangle){ 15, 15+menuPos.y, ScreenWidth-30, ScreenHeight-30 },
     (Vector2){ 0, 0 }, 0, WHITE);
 
-    DrawText("FRUIT NINJA", ScreenWidth/2 - MeasureText("FRUIT NINJA", 90)/2, 120+menuPos.y, 90, YELLOW);
+    DrawText("FRUIT NINJA", ScreenWidth/2 - MeasureText("FRUIT NINJA", 120)/2, 130+menuPos.y, 120, YELLOW);
 
     nameBox.y = 360+menuPos.y;
     lbButton.y = 455+menuPos.y;
@@ -619,7 +627,7 @@ void ShowMenuExit() {
         (Rectangle){15,15 + menuPos.y,ScreenWidth - 30,ScreenHeight - 30 },
         (Vector2){0,0}, 0, WHITE);
 
-    DrawText("FRUIT NINJA", ScreenWidth/2 - MeasureText("FRUIT NINJA", 90)/2, 120 + menuPos.y, 90, YELLOW);
+    DrawText("FRUIT NINJA", ScreenWidth/2 - MeasureText("FRUIT NINJA", 120)/2, 130+menuPos.y, 120, YELLOW);
 
     PlayButton.y = 360+menuPos.y;
     nameBox.y = 360+menuPos.y;
@@ -695,16 +703,17 @@ void ShowHowToPlay(){
                 sprintf(text, 
                     "Whenever a fruit is thrown, your job is to slash through it.");
                 DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 160, 30, WHITE);
-                DrawAsset(splatter[4], 920, 340, 400, 0);
-                DrawAsset(fruit[5], 420, 340, 240, 0);
-                DrawAsset(deadfruit[5], 920, 340, 240, 0);
-                DrawAsset(WhiteSlash, 920, 340, 240, 0);
+                DrawAsset(splatter[4], 920, 370, 400, 0);
+                DrawAsset(fruit[5], 420, 370, 240, 0);
+                DrawAsset(deadfruitB[5], 940, 350, 240, 0);
+                DrawAsset(deadfruitA[5], 920, 410, 240, 0);
+                DrawAsset(WhiteSlash, 920, 370, 240, 0);
                 sprintf(text, 
                     "Number of fruits appearing on the screen will increase the further you progress.");
-                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 520, 30, WHITE);
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 590, 30, WHITE);
                 sprintf(text, 
                     "Hence you need to be fast and alert progressively.");
-                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 560, 30, WHITE);
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 630, 30, WHITE);
                 break;
             case 2:
                 sprintf(text, 
@@ -723,9 +732,9 @@ void ShowHowToPlay(){
                 sprintf(text, 
                     "However, there is one 'fruit' you should avoid: the Bomb.");
                 DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 150, 30, WHITE);
-                DrawAsset(bomb[0], 420, 340, 240, 0);
-                DrawAsset(splatter[8], 920, 340, 400, 0);
-                DrawAsset(WhiteSlash, 920, 340, 240, 0);
+                DrawAsset(bomb[0], 420, 360, 240, 0);
+                DrawAsset(splatter[8], 920, 360, 320, 0);
+                DrawAsset(WhiteSlash, 920, 360, 240, 0);
                 sprintf(text, 
                     "Slicing it inflicts an increasing score penalty the further you progress.");
                 DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 580, 30, WHITE);
@@ -934,6 +943,8 @@ void GameOverScreen() {
         currentState = STATE_MENU;
         menuPos = (Vector2){0,-ScreenHeight};
         menuSpeed = (Vector2){0,0};
+        score = 0;
+        missedFruits = 0;
     }
 }
 
@@ -990,73 +1001,77 @@ void PlayGame(){
         for(int i=0; i<maxfruits; i++){
             if (thrownfruit[i].isitonscreen && !thrownfruit[i].sliced){
 
-        #if DEBUG
-        DrawAsset(KNIFE, thrownfruit[i].position.x, thrownfruit[i].position.y+FruitWidth/2, 40, 0);
-        DrawAsset(KNIFE, thrownfruit[i].position.x, thrownfruit[i].position.y-FruitWidth/2, 40, 0);
-        DrawAsset(KNIFE, thrownfruit[i].position.x+FruitWidth/2, thrownfruit[i].position.y, 40, 0);
-        DrawAsset(KNIFE, thrownfruit[i].position.x-FruitWidth/2, thrownfruit[i].position.y, 40, 0);
-        DrawCircleLinesV(thrownfruit[i].position, FruitWidth/2, GRAY);
-        #endif
+                #if DEBUG
+                DrawAsset(KNIFE, thrownfruit[i].position.x, thrownfruit[i].position.y+FruitWidth/2, 40, 0);
+                DrawAsset(KNIFE, thrownfruit[i].position.x, thrownfruit[i].position.y-FruitWidth/2, 40, 0);
+                DrawAsset(KNIFE, thrownfruit[i].position.x+FruitWidth/2, thrownfruit[i].position.y, 40, 0);
+                DrawAsset(KNIFE, thrownfruit[i].position.x-FruitWidth/2, thrownfruit[i].position.y, 40, 0);
+                DrawCircleLinesV(thrownfruit[i].position, FruitWidth/2, GRAY);
+                #endif
 
-        RelativeVelocity = Vector2Subtract(KnifeVelocity, thrownfruit[i].speed);
+                RelativeVelocity = Vector2Subtract(KnifeVelocity, thrownfruit[i].speed);
 
-        if(CheckCollisionCircleLine(thrownfruit[i].position, FruitWidth/2, Trailpositions[0], Trailpositions[1]) && ((pow((RelativeVelocity.x),2) + pow((RelativeVelocity.y),2)) > 300000)){
-            if (thrownfruit[i].fruit_index >= 20 && thrownfruit[i].fruit_index <= 25){
-                if(SFXVolume) PlaySound(EXPLODE);
-                StopSound(fuse);
-                tint = 255;
-                if(comboCount<10) penalty = -30;
-                else if(comboCount<15) penalty = -40;
-                else if(comboCount<20) penalty = -50;
-                else if(comboCount<25) penalty = -60;
-                else if(comboCount<30) penalty = -70;
-                else penalty = 80;
-                score += penalty;
-                comboCount = 0;
-                ShowSliceScore(thrownfruit[i].position,penalty,1);
-                if (score < 0) TriggerGameOver();
-            }
-            else {
-                if(SFXVolume) PlaySound(Splat[GetRandomValue(0,2)]);
-                comboCount++;
-            
-                if (comboCount >= 50) pointBonus = 35;
-                else if (comboCount >= 40) pointBonus = 30;
-                else if (comboCount >= 30) pointBonus = 25;
-                else if (comboCount >= 20) pointBonus = 20;
-                else if (comboCount >= 10) pointBonus = 15;
-                else pointBonus = 10;
-                
-                score += pointBonus;
-                ShowSliceScore(thrownfruit[i].position,pointBonus,1);
+                if(CheckCollisionCircleLine(thrownfruit[i].position, FruitWidth/2, Trailpositions[0], Trailpositions[1]) && ((pow((RelativeVelocity.x),2) + pow((RelativeVelocity.y),2)) > 300000)){
+                    if (thrownfruit[i].fruit_index >= 20 && thrownfruit[i].fruit_index <= 25){
+                        if(SFXVolume) PlaySound(EXPLODE);
+                        StopSound(fuse);
+                        tint = 255;
+                        if(comboCount<10) penalty = -30;
+                        else if(comboCount<15) penalty = -40;
+                        else if(comboCount<20) penalty = -50;
+                        else if(comboCount<25) penalty = -60;
+                        else if(comboCount<30) penalty = -70;
+                        else penalty = 80;
+                        score += penalty;
+                        comboCount = 0;
+                        ShowSliceScore(thrownfruit[i].position,penalty,1);
+                        if (score < 0) TriggerGameOver();
+                    }
+                    else {
+                        if(SFXVolume) PlaySound(Splat[GetRandomValue(0,2)]);
+                        comboCount++;
 
-                if (comboCount % 10 == 0 && comboCount <= 50) {
-                    comboDisplayTimer = 2;
-                    lastComboHit = comboCount;
-                    if(SFXVolume) PlaySound(comboCount==20? SUPERCOMBO:COMBO);
+                        if (comboCount >= 50) pointBonus = 35;
+                        else if (comboCount >= 40) pointBonus = 30;
+                        else if (comboCount >= 30) pointBonus = 25;
+                        else if (comboCount >= 20) pointBonus = 20;
+                        else if (comboCount >= 10) pointBonus = 15;
+                        else pointBonus = 10;
+
+                        score += pointBonus;
+                        ShowSliceScore(thrownfruit[i].position,pointBonus,1);
+
+                        if (comboCount % 10 == 0 && comboCount <= 50) {
+                            comboDisplayTimer = 2;
+                            lastComboHit = comboCount;
+                            if(SFXVolume) PlaySound(comboCount==20? SUPERCOMBO:COMBO);
+                        }
+                    }
+                    thrownfruit[i].sliced = 1;
+                    thrownfruit[i].storeSplatter = 1;
+                    thrownfruit[i].splatterX = thrownfruit[i].position.x;
+                    thrownfruit[i].splatterY = thrownfruit[i].position.y;
+                    thrownfruit[i].posA = thrownfruit[i].position;
+                    thrownfruit[i].posB = thrownfruit[i].position;
+                    thrownfruit[i].speedA = (Vector2){thrownfruit[i].speed.x+150, thrownfruit[i].speed.y+120};
+                    thrownfruit[i].speedB = (Vector2){thrownfruit[i].speed.x-150, thrownfruit[i].speed.y-120};
                 }
             }
-            thrownfruit[i].sliced = 1;
-            thrownfruit[i].storeSplatter = 1;
-            thrownfruit[i].splatterX = thrownfruit[i].position.x;
-            thrownfruit[i].splatterY = thrownfruit[i].position.y;
         }
-    }
-    }
     }  
 }
 
 void ShowSliceScore(Vector2 sliceposition, int points, int call){
     if(call) {
         for (int i = 0; i < 10; i++) {
-        if (!scoreshown[i].isitonscreen) {
-            scoreshown[i].position = sliceposition;
-            scoreshown[i].points = points;
-            scoreshown[i].showtimer = 1;
-            scoreshown[i].isitonscreen = 1;
-            return;
+            if (!scoreshown[i].isitonscreen) {
+                scoreshown[i].position = sliceposition;
+                scoreshown[i].points = points;
+                scoreshown[i].showtimer = 1;
+                scoreshown[i].isitonscreen = 1;
+                return;
+            }
         }
-    }
 
     scoreshown[0].position = sliceposition;
     scoreshown[0].points = points;
@@ -1064,26 +1079,26 @@ void ShowSliceScore(Vector2 sliceposition, int points, int call){
     scoreshown[0].isitonscreen = 1;
     }
     else{
-    float dt = GetFrameTime();
+        float dt = GetFrameTime();
 
-    for (int i = 0; i < 10; i++) {
-        if (!scoreshown[i].isitonscreen) continue;
+        for (int i = 0; i < 10; i++) {
+            if (!scoreshown[i].isitonscreen) continue;
 
-        scoreshown[i].showtimer -= dt;
-        if (scoreshown[i].showtimer <= 0) {
-            scoreshown[i].isitonscreen = 0;
-            continue;
+            scoreshown[i].showtimer -= dt;
+            if (scoreshown[i].showtimer <= 0) {
+                scoreshown[i].isitonscreen = 0;
+                continue;
+            }
+            scoreshown[i].position.y -= 85 * dt;
+
+            float fadetint = scoreshown[i].showtimer /pointshowmaxtimer;
+
+            char pointstext[6];
+            if(scoreshown[i].points > 0) sprintf(pointstext, "+%d", scoreshown[i].points);
+            else sprintf(pointstext, "%d", scoreshown[i].points);
+            DrawText(pointstext, scoreshown[i].position.x-MeasureText(pointstext, 36)/2, scoreshown[i].position.y, 36, scoreshown[i].points==-30? (Color){255,0,0,fadetint*255} : (scoreshown[i].points >= 20? (Color){245,190,64,fadetint*255} : (Color){241,245,118,fadetint*255}));
         }
-        scoreshown[i].position.y -= 85 * dt;
-
-        float fadetint = scoreshown[i].showtimer /pointshowmaxtimer;
-
-        char pointstext[6];
-        if(scoreshown[i].points > 0) sprintf(pointstext, "+%d", scoreshown[i].points);
-        else sprintf(pointstext, "%d", scoreshown[i].points);
-        DrawText(pointstext, scoreshown[i].position.x-MeasureText(pointstext, 36)/2, scoreshown[i].position.y, 36, scoreshown[i].points==-30? (Color){255,0,0,fadetint*255} : (scoreshown[i].points >= 20? (Color){245,190,64,fadetint*255} : (Color){241,245,118,fadetint*255}));
     }
-}
 }
 
 void UpdateFruitThrow(){
@@ -1095,47 +1110,65 @@ void UpdateFruitThrow(){
     if (thrownfruit[i].isitonscreen == 0) continue;
     fruitsOnScreen++;
 
-    thrownfruit[i].rotation += 70*dt;
-    thrownfruit[i].speed = Vector2Add(thrownfruit[i].speed, Vector2Scale(gravity,dt));
-    thrownfruit[i].position = Vector2Add(thrownfruit[i].position, Vector2Scale(thrownfruit[i].speed,dt));
+        if(thrownfruit[i].fruit_index >= 20 && thrownfruit[i].fruit_index <= 25){
+            thrownfruit[i].rotation += 70*dt;
+            thrownfruit[i].speed = Vector2Add(thrownfruit[i].speed, Vector2Scale(gravity,dt));
+            thrownfruit[i].position = Vector2Add(thrownfruit[i].position, Vector2Scale(thrownfruit[i].speed,dt));
 
-    if(thrownfruit[i].fruit_index >= 20 && thrownfruit[i].fruit_index <= 25){
-        int bomb_index, fuse_frame;
-        bomb_index = (int)(GetTime() / 0.05) % 4;
-        fuse_frame = (int)(GetTime() / 0.5) % 2;
-        if (thrownfruit[i].sliced){
-            DrawAsset(splatter[thrownfruit[i].splatter_index], thrownfruit[i].splatterX, thrownfruit[i].splatterY, SplatterWidth, 0);
-            DrawAsset(EMPTY, thrownfruit[i].position.x, thrownfruit[i].position.y, BombWidth, thrownfruit[i].rotation);
-            if(thrownfruit[i].storeSplatter){
-                StorePreviousSplatters(thrownfruit[i].splatter_index, (Vector2){thrownfruit[i].splatterX, thrownfruit[i].splatterY});
-                thrownfruit[i].storeSplatter = 0;
+            int bomb_index, fuse_frame;
+            bomb_index = (int)(GetTime() / 0.05) % 4;
+            fuse_frame = (int)(GetTime() / 0.5) % 2;
+            if (thrownfruit[i].sliced){
+                DrawAsset(splatter[thrownfruit[i].splatter_index], thrownfruit[i].splatterX, thrownfruit[i].splatterY, SplatterWidth, 0);
+                DrawAsset(EMPTY, thrownfruit[i].position.x, thrownfruit[i].position.y, BombWidth, thrownfruit[i].rotation);
+                if(thrownfruit[i].storeSplatter){
+                    StorePreviousSplatters(thrownfruit[i].splatter_index, (Vector2){thrownfruit[i].splatterX, thrownfruit[i].splatterY});
+                    thrownfruit[i].storeSplatter = 0;
+                }
             }
+            else if (fuse_frame == 1) DrawAsset(bomb[bomb_index], thrownfruit[i].position.x, thrownfruit[i].position.y, BombWidth, thrownfruit[i].rotation );
+            else DrawAsset(bombfuse[bomb_index], thrownfruit[i].position.x, thrownfruit[i].position.y, BombWidth, thrownfruit[i].rotation);
+            if(thrownfruit[i].position.y > ScreenHeight+1000 && thrownfruit[i].speed.y > 0) thrownfruit[i].isitonscreen = 0;
         }
-        else if (fuse_frame == 1) DrawAsset(bomb[bomb_index], thrownfruit[i].position.x, thrownfruit[i].position.y, BombWidth, thrownfruit[i].rotation );
-        else DrawAsset(bombfuse[bomb_index], thrownfruit[i].position.x, thrownfruit[i].position.y, BombWidth, thrownfruit[i].rotation);
-    }
-    else{
-        if(!thrownfruit[i].sliced) DrawAsset(fruit[thrownfruit[i].fruit_index], thrownfruit[i].position.x, thrownfruit[i].position.y, FruitWidth, thrownfruit[i].rotation);
+
         else{
-            DrawAsset(splatter[thrownfruit[i].splatter_index], thrownfruit[i].splatterX, thrownfruit[i].splatterY, SplatterWidth, 0);
-            DrawAsset(deadfruit[thrownfruit[i].fruit_index], thrownfruit[i].position.x, thrownfruit[i].position.y, FruitWidth, thrownfruit[i].rotation);
-            if(thrownfruit[i].storeSplatter){
-                StorePreviousSplatters(thrownfruit[i].splatter_index, (Vector2){thrownfruit[i].splatterX, thrownfruit[i].splatterY});
-                thrownfruit[i].storeSplatter = 0;
+            if(!thrownfruit[i].sliced) {
+                thrownfruit[i].rotation += 70*dt;
+                thrownfruit[i].speed = Vector2Add(thrownfruit[i].speed, Vector2Scale(gravity,dt));
+                thrownfruit[i].position = Vector2Add(thrownfruit[i].position, Vector2Scale(thrownfruit[i].speed,dt));
+                DrawAsset(fruit[thrownfruit[i].fruit_index], thrownfruit[i].position.x, thrownfruit[i].position.y, FruitWidth, thrownfruit[i].rotation);
+                if (thrownfruit[i].position.y > ScreenHeight+1000 && thrownfruit[i].speed.y > 0) {
+                    missedFruits++;
+                    comboCount = 0;
+                    thrownfruit[i].isitonscreen = 0;
+                    if (missedFruits >= strikes) {
+                        TriggerGameOver();
+                        return;
+                    }
+                }
             }
+
+            else{
+                DrawAsset(splatter[thrownfruit[i].splatter_index], thrownfruit[i].splatterX, thrownfruit[i].splatterY, SplatterWidth, 0);
+                if(thrownfruit[i].storeSplatter){
+                    StorePreviousSplatters(thrownfruit[i].splatter_index, (Vector2){thrownfruit[i].splatterX, thrownfruit[i].splatterY});
+                    thrownfruit[i].storeSplatter = 0;
+                }
+                thrownfruit[i].rotation += 70*dt;
+                thrownfruit[i].speedA = Vector2Add(thrownfruit[i].speedA, Vector2Scale(gravity,dt));
+                thrownfruit[i].speedB = Vector2Add(thrownfruit[i].speedB, Vector2Scale(gravity,dt));
+                thrownfruit[i].posA = Vector2Add(thrownfruit[i].posA, Vector2Scale(thrownfruit[i].speedA,dt));
+                thrownfruit[i].posB = Vector2Add(thrownfruit[i].posB, Vector2Scale(thrownfruit[i].speedB,dt));
+
+                DrawAsset(deadfruitA[thrownfruit[i].fruit_index], thrownfruit[i].posA.x, thrownfruit[i].posA.y, FruitWidth, thrownfruit[i].rotation);
+                DrawAsset(deadfruitB[thrownfruit[i].fruit_index], thrownfruit[i].posB.x, thrownfruit[i].posB.y, FruitWidth, thrownfruit[i].rotation);
+                
+                if(thrownfruit[i].posA.y > ScreenHeight+1000 
+                && thrownfruit[i].speedA.y > 0 
+                && thrownfruit[i].posB.y > ScreenHeight+1000 
+                && thrownfruit[i].speedB.y > 0) thrownfruit[i].isitonscreen = 0;
+            }   
         }
-    }
-    if(thrownfruit[i].position.y > ScreenHeight+1000 && thrownfruit[i].speed.y > 0) {
-        if (!thrownfruit[i].sliced && thrownfruit[i].fruit_index < 20) {
-            missedFruits++;
-            comboCount = 0;
-            if (missedFruits >= strikes) {
-                TriggerGameOver();
-                return;
-            }
-        }
-        thrownfruit[i].isitonscreen = 0;
-    } 
     }
     
     if(fruitsOnScreen == 0){
@@ -1199,7 +1232,8 @@ void DrawAsset(Texture2D fruit, float CentreX, float CentreY, float fruitwidth, 
 
 void UnloadAssets(){
     UnloadTexture2D(fruit, 20);
-    UnloadTexture2D(deadfruit, 20);
+    UnloadTexture2D(deadfruitA, 20);
+    UnloadTexture2D(deadfruitB, 20);
     UnloadTexture2D(splatter, 9);
     UnloadTexture2D(bomb, 4);
     UnloadTexture2D(bombfuse, 4);
