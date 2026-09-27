@@ -73,7 +73,7 @@ ShowScore scoreshown[10];
 
 char currentPlayer[MAX_NAME_LEN + 1] = "\0";
 
-int fruit_throw_count, wave=0, MusicVolume=1, SFXVolume=1, PAUSE=0, Cursor=1, Close=0, totalPlayers = 0, tint=TINT, score = 0, highScore = 0, missedFruits = 0, lastComboHit = 0, comboCount = 0, currentState = STATE_MENU, pointBonus=10, PageCount = 1;
+int fruit_throw_count, wave=0, MusicVolume=1, SFXVolume=1, PAUSE=0, Cursor=1, Close=0, totalPlayers = 0, tint=TINT, score = 0, highScore = 0, missedFruits = 0, lastComboHit = 0, comboCount = 0, currentState = STATE_LOADING, pointBonus=10, PageCount = 1;
 
 float gameOverTimer = 0, countdowntimer = 0, comboDisplayTimer = 0, flickertimer=0, scoreslidetimer=0, scoreslidespeed=0, scoretextX, striketextX=0, strikeslidespeed, pointshowmaxtimer=1, loadingtimer=7;
 
@@ -443,8 +443,9 @@ void LoadingScreen(){
     char loadingtext[50];
     sprintf(loadingtext, "Loading Assets and Sounds... (%.1f%%)", (10-loadingtimer)*10);
     if(loadingtimer>1) loadingtimer -= dt*2;
-    else if(loadingtimer>0.3) loadingtimer -= dt*0.5;
-    else loadingtimer -= dt*0.1;
+    else if(loadingtimer>0.3) loadingtimer -= dt;
+    else if(loadingtimer>0.009) loadingtimer -= dt*0.1;
+    else loadingtimer -= dt*0.005;
     DrawText(loadingtext, ScreenWidth/2-460, ScreenHeight/2, 50, GRAY);
     if(loadingtimer<0) currentState = STATE_MENU;
 }
