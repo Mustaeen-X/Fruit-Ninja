@@ -28,12 +28,14 @@
 #define STATE_COUNTDOWN 4
 #define STATE_LEADERBOARD 5
 #define STATE_MENU_EXIT 6
+#define STATE_HOWTOPLAY 7
+#define STATE_CREDITS 8
 #define strikes 5
 #define maxfruits 10
 #define throwspeed 2200
 #define slidespeed 5000
 #define slidedespeed .3
-#define MAX_NAME_LEN 15
+#define MAX_NAME_LEN 10
 #define MAX_PLAYERS 100
 #define SILVER (Color){192,192,192,255}
 #define BRONZE (Color){205,127,50,255}
@@ -71,14 +73,14 @@ ShowScore scoreshown[10];
 
 char currentPlayer[MAX_NAME_LEN + 1] = "\0";
 
-int fruit_throw_count, wave=0, MusicVolume=1, SFXVolume=1, PAUSE=0, Cursor=1, Close=0, totalPlayers = 0, tint=TINT, score = 0, highScore = 0, missedFruits = 0, lastComboHit = 0, comboCount = 0, currentState = STATE_LOADING, pointBonus=10;
+int fruit_throw_count, wave=0, MusicVolume=1, SFXVolume=1, PAUSE=0, Cursor=1, Close=0, totalPlayers = 0, tint=TINT, score = 0, highScore = 0, missedFruits = 0, lastComboHit = 0, comboCount = 0, currentState = STATE_HOWTOPLAY, pointBonus=10, PageCount = 1;
 
 float gameOverTimer = 0, countdowntimer = 0, comboDisplayTimer = 0, flickertimer=0, scoreslidetimer=0, scoreslidespeed=0, scoretextX, striketextX=0, strikeslidespeed, pointshowmaxtimer=1, loadingtimer=7;
 
 bool typingName = false, isNewHighScore = false;
 
 Texture2D *allocate_TextureMatrix(Texture2D *array, int elements);
-Texture2D fruit[20], deadfruit[20], splatter[9], bomb[4], bombfuse[4], KNIFE, EMPTY, MusicIcon, BACKGROUND, Menu_Map, *PreviousSplatter;
+Texture2D fruit[20], deadfruit[20], splatter[9], bomb[4], bombfuse[4], KNIFE, EMPTY, MusicIcon, BACKGROUND, Menu_Map, WhiteSlash, *PreviousSplatter;
 
 Vector2 *allocate_VectorMatrix(Vector2 *array, int elements);
 Vector2 *PreviousSplatterPosition, *Trailpositions, gravity={0,throwspeed}, slidingAcc={0,slidespeed}, menuPos={0,-ScreenHeight}, menuSpeed={0,0};
@@ -90,9 +92,11 @@ Rectangle nameBox = {ScreenWidth/2+20, 360, 280, 70};
 Rectangle lbButton = {ScreenWidth/2+20, 455, 280, 70};
 Rectangle PlayButton = {ScreenWidth/2-300, 360, 280, 70};
 Rectangle QuitButton = {ScreenWidth/2-300, 455, 280, 70};
-Rectangle SFXButton = {ScreenWidth - 300, ScreenHeight - 220, 70, 70};
+Rectangle HowToPlayButton = {ScreenWidth/2 - 300, 605, 280, 70};
+Rectangle CreditsButton = {ScreenWidth/2 + 20, 605, 280, 70};
+Rectangle SFXButton = {ScreenWidth - 270, ScreenHeight - 220, 70, 70};
 Rectangle MusicButton = {ScreenWidth - 180, ScreenHeight - 220, 70, 70};
-Rectangle CursorButton = {ScreenWidth - 420, ScreenHeight - 220, 70, 70};
+Rectangle CursorButton = {ScreenWidth - 360, ScreenHeight - 220, 70, 70};
 Rectangle backButton = {ScreenWidth/2 - 120, ScreenHeight - 130, 240, 60};
 
 Sound Throw[4], Slash[3], Splat[3], EXPLODE, fuse, GameOver, HIGHSCORE, MENU, PLAYFN, COUNTDOWN, COMBO, SUPERCOMBO, PLAYPRESSED;
@@ -131,6 +135,8 @@ void LoadLeaderboard();
 void SaveLeaderboard();
 void UpdateLeaderboard(const char* name, int newScore);
 int GetPersonalHighScore(const char* name);
+void ShowHowToPlay();
+void ShowCredits();
 
 int main(){
     LoadGame();
@@ -262,6 +268,12 @@ void LoadAssets(){
     KNIFE = LoadTextureFromImage(temp);
     UnloadImage(temp);
 
+    temp = LoadImage("assets/slash.png");
+    maxdim = temp.width >= temp.height? temp.width : temp.height;
+    ImageResizeCanvas(&temp, maxdim, maxdim, (maxdim - temp.width) / 2 , (maxdim - temp.height) / 2, BLANK);
+    WhiteSlash = LoadTextureFromImage(temp);
+    UnloadImage(temp);
+
     Menu_Map = LoadTexture("assets/menu_map.png");
     BACKGROUND = LoadTexture("assets/background.png");
 
@@ -347,7 +359,7 @@ void LoadSounds(){
 void GameState(){
     float dt = GetFrameTime();
 
-    if(IsKeyPressed(KEY_P)) PAUSE = !PAUSE;
+    if(IsKeyPressed(KEY_TAB)) PAUSE = !PAUSE;
     Rectangle pauseBox = {ScreenWidth/2 - 120, ScreenHeight/2 - 35, 250, 100};
     if(PAUSE) if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && CheckCollisionPointRec(GetMousePosition(), pauseBox)) PAUSE = !PAUSE;
     SetMasterVolume(1 - PAUSE*.7);
@@ -376,6 +388,12 @@ void GameState(){
                 break;
             case STATE_GAMEOVER:
                 GameOverScreen();
+                break;
+            case STATE_HOWTOPLAY:
+                ShowHowToPlay();
+                break;
+            case STATE_CREDITS:
+                ShowCredits();
                 break;
         }
     } else {
@@ -455,10 +473,13 @@ void ShowMenu(){
 
     DrawText("FRUIT NINJA", ScreenWidth/2 - MeasureText("FRUIT NINJA", 70)/2, 120+menuPos.y, 70, YELLOW);
 
-    nameBox.y      = 360+menuPos.y;
-    lbButton.y     = 455+menuPos.y;
-    PlayButton.y   = 360+menuPos.y;
-    QuitButton.y   = 455+menuPos.y;
+    nameBox.y = 360+menuPos.y;
+    lbButton.y = 455+menuPos.y;
+    PlayButton.y = 360+menuPos.y;
+    QuitButton.y = 455+menuPos.y;
+    HowToPlayButton.y = 605+menuPos.y;
+    CreditsButton.y = 605+menuPos.y;
+
     SFXButton.y    = (ScreenHeight-220)+menuPos.y;
     MusicButton.y  = (ScreenHeight-220)+menuPos.y;
     CursorButton.y = (ScreenHeight-220)+menuPos.y;
@@ -470,6 +491,8 @@ void ShowMenu(){
     bool hoveringSFX = CheckCollisionPointRec(GetMousePosition(), SFXButton);
     bool hoveringCursor = CheckCollisionPointRec(GetMousePosition(), CursorButton);
     bool hoveringQuit = CheckCollisionPointRec(GetMousePosition(), QuitButton);
+    bool hoveringHowToPlay = CheckCollisionPointRec(GetMousePosition(), HowToPlayButton);
+    bool hoveringCredits = CheckCollisionPointRec(GetMousePosition(), CreditsButton);
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) typingName = hoveringName;
 
@@ -512,6 +535,16 @@ void ShowMenu(){
     DrawRectangleLinesEx(QuitButton, 5, (Color){200, 60, 195, 255});
     DrawText("QUIT GAME", QuitButton.x + (QuitButton.width - MeasureText("QUIT GAME", 35)) / 2, QuitButton.y + (QuitButton.height - 35) / 2, 35, WHITE);
     if (hoveringQuit && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) Close = !Close;
+
+    DrawRectangleRec(HowToPlayButton, hoveringHowToPlay ? (Color){163, 64, 162, 255} : (Color){255, 100, 252, 255});
+    DrawRectangleLinesEx(HowToPlayButton, 5, (Color){200, 60, 195, 255});
+    DrawText("HOW TO PLAY", HowToPlayButton.x + (HowToPlayButton.width - MeasureText("HOW TO PLAY", 35)) / 2, HowToPlayButton.y + (HowToPlayButton.height - 35) / 2, 35, WHITE);
+    if (hoveringHowToPlay && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) currentState = STATE_HOWTOPLAY;
+
+    DrawRectangleRec(CreditsButton, hoveringCredits ? (Color){163, 64, 162, 255} : (Color){255, 100, 252, 255});
+    DrawRectangleLinesEx(CreditsButton, 5, (Color){200, 60, 195, 255});
+    DrawText("CREDITS", CreditsButton.x + (CreditsButton.width - MeasureText("CREDITS", 35)) / 2, CreditsButton.y + (CreditsButton.height - 35) / 2, 35, WHITE);
+    if (hoveringCredits && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) currentState = STATE_CREDITS;
 
     DrawRectangleRec(MusicButton, hoveringTMUSIC? (Color){180, 180, 180, 255} : (Color){220, 220, 220, 255});
     DrawRectangleLinesEx(MusicButton, 5, (Color){100, 100, 100, 255});
@@ -587,10 +620,12 @@ void ShowMenuExit() {
 
     DrawText("FRUIT NINJA", ScreenWidth/2 - MeasureText("FRUIT NINJA", 70)/2, 120 + menuPos.y, 70, YELLOW);
 
-    PlayButton.y   = 360+menuPos.y;
-    nameBox.y      = 360+menuPos.y;
-    QuitButton.y   = 455+menuPos.y;
-    lbButton.y     = 455+menuPos.y;
+    PlayButton.y = 360+menuPos.y;
+    nameBox.y = 360+menuPos.y;
+    QuitButton.y = 455+menuPos.y;
+    lbButton.y = 455+menuPos.y;
+    HowToPlayButton.y = 605+menuPos.y;
+    CreditsButton.y = 605+menuPos.y;
     SFXButton.y    = (ScreenHeight - 220)+menuPos.y;
     MusicButton.y  = (ScreenHeight - 220)+menuPos.y;
     CursorButton.y = (ScreenHeight - 220)+menuPos.y;
@@ -610,6 +645,14 @@ void ShowMenuExit() {
     DrawRectangleRec(QuitButton, (Color){255, 100, 252, 255});
     DrawRectangleLinesEx(QuitButton, 5, (Color){200, 60, 195, 255});
     DrawText("QUIT GAME", QuitButton.x + (QuitButton.width - MeasureText("QUIT GAME", 35)) / 2, QuitButton.y + (QuitButton.height - 35) / 2, 35, WHITE);
+
+    DrawRectangleRec(HowToPlayButton, (Color){163, 64, 162, 255});
+    DrawRectangleLinesEx(HowToPlayButton, 5, (Color){200, 60, 195, 255});
+    DrawText("HOW TO PLAY", HowToPlayButton.x + (HowToPlayButton.width - MeasureText("HOW TO PLAY", 35)) / 2, HowToPlayButton.y + (HowToPlayButton.height - 35) / 2, 35, WHITE);
+
+    DrawRectangleRec(CreditsButton,(Color){163, 64, 162, 255});
+    DrawRectangleLinesEx(CreditsButton, 5, (Color){200, 60, 195, 255});
+    DrawText("CREDITS", CreditsButton.x + (CreditsButton.width - MeasureText("CREDITS", 35)) / 2, CreditsButton.y + (CreditsButton.height - 35) / 2, 35, WHITE);
 
     DrawRectangleRec(MusicButton, (Color){220, 220, 220, 255});
     DrawRectangleLinesEx(MusicButton, 5, (Color){100, 100, 100, 255});
@@ -631,6 +674,125 @@ void ShowMenuExit() {
         scoreslidetimer=0;
         scoreslidespeed=0;
         currentState = STATE_COUNTDOWN;
+    }
+}
+
+void ShowHowToPlay(){
+    Rectangle NextButton = {ScreenWidth/2 - 120, ScreenHeight - 210, 240, 60};
+    char text[1000];
+
+    sprintf(text, 
+        "HOW TO PLAY");
+    DrawText(text, ScreenWidth/2 - MeasureText(text, 70)/2, 20, 70, YELLOW);
+
+    switch (PageCount) {
+            case 1:
+                sprintf(text, 
+                    "This is a game about cutting fruits. Simple as that.");
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 120, 30, WHITE);
+                sprintf(text, 
+                    "Whenever a fruit is thrown, your job is to slash through it.");
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 160, 30, WHITE);
+                DrawAsset(splatter[4], 920, 340, 400, 0);
+                DrawAsset(fruit[5], 420, 340, 240, 0);
+                DrawAsset(deadfruit[5], 920, 340, 240, 0);
+                DrawAsset(WhiteSlash, 920, 340, 240, 0);
+                sprintf(text, 
+                    "Number of fruits appearing on the screen will increase the further you progress.");
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 520, 30, WHITE);
+                sprintf(text, 
+                    "Hence you need to be fast and alert progressively.");
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 560, 30, WHITE);
+                break;
+            case 2:
+                sprintf(text, 
+                    "Points will be awarded for each fruit you have cut through.");
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 200, 30, WHITE);
+                for(int i=1; i<6; i++){
+                sprintf(text, 
+                    "COMBO: %d0!!!", i);
+                DrawText(text, ScreenWidth/2 - MeasureText(text,30), 210+i*60, 60, (Color){ 255, 165, 0, 255 });
+                }
+                sprintf(text, 
+                    "Furthermore, having a combo or streak will get you more points for each fruit slash.");
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 600, 30, WHITE);
+                break;
+            case 3:
+                sprintf(text, 
+                    "However, there is one 'fruit' you should avoid: the Bomb.");
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 150, 30, WHITE);
+                DrawAsset(bomb[0], 420, 340, 240, 0);
+                DrawAsset(splatter[8], 920, 340, 400, 0);
+                DrawAsset(WhiteSlash, 920, 340, 240, 0);
+                sprintf(text, 
+                    "Slicing it inflicts an increasingly score penalty the further you progress.");
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 580, 30, WHITE);
+                sprintf(text, 
+                    "It will also break the combo you had for a while.");
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 620, 30, WHITE);
+                break;
+        }
+
+    bool hoveringNext = CheckCollisionPointRec(GetMousePosition(), NextButton);
+    if(PageCount < 3){
+        DrawRectangleRec(NextButton, hoveringNext ? RED : MAROON);
+        DrawRectangleLinesEx(NextButton, 4, DARKGRAY);
+        DrawText("NEXT", NextButton.x + NextButton.width/2 - MeasureText("NEXT", 35)/2, NextButton.y + 12, 35, WHITE);
+    }
+
+    if (hoveringNext && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && PageCount < 3) {
+        PageCount++;
+    }
+
+    bool hoveringBack = CheckCollisionPointRec(GetMousePosition(), backButton);
+    DrawRectangleRec(backButton, hoveringBack ? RED : MAROON);
+    DrawRectangleLinesEx(backButton, 4, DARKGRAY);
+    DrawText("BACK", backButton.x + backButton.width/2 - MeasureText("BACK", 35)/2, backButton.y + 12, 35, WHITE);
+
+    if (hoveringBack && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        currentState = STATE_MENU;
+        menuPos = (Vector2){0,-ScreenHeight};
+        menuSpeed = (Vector2){0,0};
+        PageCount = 1;
+    }
+}
+
+void ShowCredits(){
+    char text[1000];
+
+    sprintf(text, 
+        "CREDITS");
+    DrawText(text, ScreenWidth/2 - MeasureText(text, 70)/2, 20, 70, YELLOW);
+
+    sprintf(text, 
+        "Game and Menu Music : Toby Fox & MasterSwordRemix");
+    DrawText(text, 620, 210, 29, YELLOW);
+
+    sprintf(text, 
+        "Sound Effects : Pixabay SFX Library");
+    DrawText(text, 120, 325, 29, YELLOW);
+
+    sprintf(text, 
+        "Fruit Assets : Heri Datuamas On Vecteezy");
+    DrawText(text, 510, 440, 29, YELLOW);
+
+    sprintf(text, 
+        "Backgrounds : ANIME SATSU & Daehwan Kim On Pinterest");
+    DrawText(text, 40, 555, 29, YELLOW);
+
+    sprintf(text, 
+        "Knife Sprite : Sprite Artist Temmie Chang (Undertale)");
+    DrawText(text, 620, 670, 29, YELLOW);
+
+    bool hoveringBack = CheckCollisionPointRec(GetMousePosition(), backButton);
+    DrawRectangleRec(backButton, hoveringBack ? RED : MAROON);
+    DrawRectangleLinesEx(backButton, 4, DARKGRAY);
+    DrawText("BACK", backButton.x + backButton.width/2 - MeasureText("BACK", 35)/2, backButton.y + 12, 35, WHITE);
+
+    if (hoveringBack && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        currentState = STATE_MENU;
+        menuPos = (Vector2){0,-ScreenHeight};
+        menuSpeed = (Vector2){0,0};
     }
 }
 
