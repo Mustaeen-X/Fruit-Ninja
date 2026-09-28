@@ -31,7 +31,7 @@
 #define STATE_HOWTOPLAY 7
 #define STATE_CREDITS 8
 #define strikes 5
-#define maxfruits 10
+#define maxfruits 50
 #define throwspeed 2000
 #define slidespeed 5000
 #define slidedespeed .3
@@ -39,6 +39,7 @@
 #define MAX_PLAYERS 100
 #define SILVER (Color){192,192,192,255}
 #define BRONZE (Color){205,127,50,255}
+#define YOLK CLITERAL(Color) {230, 232, 93 ,255}
 
 typedef struct {
     Vector2 position;
@@ -80,10 +81,11 @@ int fruit_throw_count, wave=0, MusicVolume=1, SFXVolume=1, PAUSE=0, Cursor=1, Cl
 
 float gameOverTimer = 0, countdowntimer = 0, comboDisplayTimer = 0, flickertimer=0, scoreslidetimer=0, scoreslidespeed=0, scoretextX, striketextX=0, strikeslidespeed, pointshowmaxtimer=1, loadingtimer=7;
 
-bool typingName = false, isNewHighScore = false;
+bool typingName = false, isNewHighScore = false, isFrenzy = false;
 
 Texture2D *allocate_TextureMatrix(Texture2D *array, int elements);
 Texture2D fruit[20], deadfruitA[20], deadfruitB[20], splatter[9], bomb[4], bombfuse[4], KNIFE, EMPTY, MusicIcon, BACKGROUND, Menu_Map, WhiteSlash, *PreviousSplatter;
+RenderTexture2D targetBuffer;
 
 Vector2 *allocate_VectorMatrix(Vector2 *array, int elements);
 Vector2 *PreviousSplatterPosition, *Trailpositions, gravity={0,throwspeed}, slidingAcc={0,slidespeed}, menuPos={0,-ScreenHeight}, menuSpeed={0,0};
@@ -145,8 +147,24 @@ int main(){
     LoadGame();
     while(!WindowShouldClose() && !Close){
 
+        // f11 ir alt+enter dile fullscreen hobe
+        if (IsKeyPressed(KEY_F11) || (IsKeyDown(KEY_LEFT_ALT) && IsKeyPressed(KEY_ENTER))) {
+            ToggleFullscreen();
+        }
+
+        float scale = fminf((float)GetScreenWidth() / ScreenWidth, (float)GetScreenHeight() / ScreenHeight);
+        if (scale <= 0) scale = 1.0f;
+
+        float padX = (GetScreenWidth() - (ScreenWidth * scale)) * 0.5f;
+        float padY = (GetScreenHeight() - (ScreenHeight * scale)) * 0.5f;
+
+        SetMouseOffset((int)-padX, (int)-padY);
+        SetMouseScale(1.0f / scale, 1.0f / scale);
+
+        BeginTextureMode(targetBuffer);
+        ClearBackground(BLACK);
+
         float dt = GetFrameTime();
-        BeginDrawing();
         Background();
 
         GameState();
@@ -155,6 +173,15 @@ int main(){
         DrawText("ruhanCodes119", ScreenWidth - MeasureText("ruhanCodes119", 35) - 15, ScreenHeight - 40, 35, (Color){200, 200, 200, 180});
         CustomCursor();
         if (currentState == STATE_GAMEPLAY || currentState == STATE_GAMEOVER || currentState == STATE_COUNTDOWN) StoreTrails();
+
+        EndTextureMode();
+
+        BeginDrawing();
+        ClearBackground(BLACK);
+        DrawTexturePro(targetBuffer.texture,
+            (Rectangle){ 0.0f, 0.0f, (float)targetBuffer.texture.width, (float)-targetBuffer.texture.height },
+            (Rectangle){ padX, padY, (float)ScreenWidth * scale, (float)ScreenHeight * scale },
+            (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
         EndDrawing(); 
     }
 
@@ -187,7 +214,7 @@ void LoadLeaderboard() {
     totalPlayers = 0;
     FILE *f = fopen("leaderboard.txt", "r");
     if (f) {
-        while (fscanf(f, "%15s %d", leaderboard[totalPlayers].name, &leaderboard[totalPlayers].score) == 2) {
+        while (fscanf(f, "%10s %d", leaderboard[totalPlayers].name, &leaderboard[totalPlayers].score) == 2) {
             totalPlayers++;
             if (totalPlayers >= MAX_PLAYERS) break;
         }
@@ -245,6 +272,7 @@ int GetPersonalHighScore(const char* name) {
 
 void LoadGame(){
     InitMatrices();
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(ScreenWidth, ScreenHeight,"Fruit Ninja");
     InitAudioDevice();
     SetTargetFPS(60);
@@ -265,6 +293,9 @@ void LoadAssets(){
     Image temp;
     int maxdim;
     
+    targetBuffer = LoadRenderTexture(ScreenWidth, ScreenHeight);
+    SetTextureFilter(targetBuffer.texture, TEXTURE_FILTER_BILINEAR);
+
     temp = LoadImage("assets/KNIFE.png");
     maxdim = temp.width >= temp.height? temp.width : temp.height;
     ImageResizeCanvas(&temp, maxdim, maxdim, (maxdim - temp.width) / 2 , (maxdim - temp.height) / 2, BLANK);
@@ -438,6 +469,7 @@ void CustomCursor(){
 
 void ResetGame() {
     isNewHighScore = false;
+    isFrenzy = false;
     wave = 1;
     comboCount = 0;
     comboDisplayTimer = 0;
@@ -842,6 +874,12 @@ void DrawScoreAndStrikes() {
 
     DrawText(TextFormat("STRIKES: %d / %d", missedFruits, strikes), striketextX, 30, 50, (missedFruits >= 4) ? (Color){255, 109, 0, 255} : ORANGE);
 
+    if (isFrenzy) {
+        int alpha = ((int)(GetTime() * 8) % 2 == 0) ? 255 : 80;
+        Color goldFlicker = (Color){ 255, 215, 0, alpha };
+        DrawText("Frenzy!!!", ScreenWidth/2 - MeasureText("Frenzy!!!", 65)/2, 30, 65, goldFlicker);
+    }
+
     if (comboDisplayTimer > 0) {
         comboDisplayTimer -= GetFrameTime();
         int alpha = comboDisplayTimer > 1 ? 255 : (int)(comboDisplayTimer * 255);
@@ -940,6 +978,7 @@ void GameOverScreen() {
         EmptyVectorMatrix(PreviousSplatterPosition, maxSplatters);
         EmptyVectorMatrix(Trailpositions, TrailLength);
         wave = 0;
+        isFrenzy = false;
         currentState = STATE_MENU;
         menuPos = (Vector2){0,-ScreenHeight};
         menuSpeed = (Vector2){0,0};
@@ -949,8 +988,8 @@ void GameOverScreen() {
 }
 
 void InitializeFruitThrow(int fruit_number){
-    int fruitrise = GetRandomValue(100,ScreenWidth);
-    int fruitfall = GetRandomValue(100,ScreenWidth);
+    int fruitrise = GetRandomValue(100,ScreenWidth-100);
+    int fruitfall = GetRandomValue(100,ScreenWidth-100);
     float fruitHspeed = (float)(fruitfall - fruitrise)/5;
     int fruitheight = GetRandomValue((int)(ScreenHeight/3), ScreenHeight-100);
     float fruitVspeed = -sqrt(2*gravity.y*fruitheight);
@@ -958,13 +997,18 @@ void InitializeFruitThrow(int fruit_number){
     thrownfruit[fruit_number].isitonscreen = 1;
     thrownfruit[fruit_number].position = (Vector2){fruitrise, ScreenHeight};
     thrownfruit[fruit_number].speed = (Vector2){fruitHspeed, fruitVspeed};
-    if(wave < 5) thrownfruit[fruit_number].fruit_index = GetRandomValue(0,19);
-    else if(wave == 5) thrownfruit[fruit_number].fruit_index = 20; 
-    else if(wave == 6){
-        if(fruit_number == 0) thrownfruit[fruit_number].fruit_index = 20;
-        else thrownfruit[fruit_number].fruit_index = GetRandomValue(0,19);
+
+    if (isFrenzy) {
+        thrownfruit[fruit_number].fruit_index = GetRandomValue(0, 19);
+    } else {
+        if(wave < 5) thrownfruit[fruit_number].fruit_index = GetRandomValue(0,19);
+        else if(wave == 5) thrownfruit[fruit_number].fruit_index = 20; 
+        else if(wave == 6){
+            if(fruit_number == 0) thrownfruit[fruit_number].fruit_index = 20;
+            else thrownfruit[fruit_number].fruit_index = GetRandomValue(0,19);
+        }
+        else thrownfruit[fruit_number].fruit_index = GetRandomValue(0,25);
     }
-    else thrownfruit[fruit_number].fruit_index = GetRandomValue(0,25);
 
     if (thrownfruit[fruit_number].fruit_index == 0 || thrownfruit[fruit_number].fruit_index == 6 || thrownfruit[fruit_number].fruit_index == 7 || thrownfruit[fruit_number].fruit_index == 8) thrownfruit[fruit_number].splatter_index = 0;
     else if (thrownfruit[fruit_number].fruit_index == 10) thrownfruit[fruit_number].splatter_index = 1;
@@ -1021,7 +1065,7 @@ void PlayGame(){
                         else if(comboCount<20) penalty = -50;
                         else if(comboCount<25) penalty = -60;
                         else if(comboCount<30) penalty = -70;
-                        else penalty = 80;
+                        else penalty = -80;
                         score += penalty;
                         comboCount = 0;
                         ShowSliceScore(thrownfruit[i].position,penalty,1);
@@ -1103,12 +1147,11 @@ void ShowSliceScore(Vector2 sliceposition, int points, int call){
 
 void UpdateFruitThrow(){
     float dt = GetFrameTime();
-    int throwNewFruits = 0;
     int fruitsOnScreen = 0;
 
     for(int i=0; i<maxfruits; i++){
-    if (thrownfruit[i].isitonscreen == 0) continue;
-    fruitsOnScreen++;
+        if (thrownfruit[i].isitonscreen == 0) continue;
+        fruitsOnScreen++;
 
         if(thrownfruit[i].fruit_index >= 20 && thrownfruit[i].fruit_index <= 25){
             thrownfruit[i].rotation += 70*dt;
@@ -1138,13 +1181,15 @@ void UpdateFruitThrow(){
                 thrownfruit[i].position = Vector2Add(thrownfruit[i].position, Vector2Scale(thrownfruit[i].speed,dt));
                 DrawAsset(fruit[thrownfruit[i].fruit_index], thrownfruit[i].position.x, thrownfruit[i].position.y, FruitWidth, thrownfruit[i].rotation);
                 if (thrownfruit[i].position.y > ScreenHeight+1000 && thrownfruit[i].speed.y > 0) {
-                    missedFruits++;
-                    comboCount = 0;
-                    thrownfruit[i].isitonscreen = 0;
-                    if (missedFruits >= strikes) {
-                        TriggerGameOver();
-                        return;
+                    if (!isFrenzy) {
+                        missedFruits++;
+                        comboCount = 0;
+                        if (missedFruits >= strikes) {
+                            TriggerGameOver();
+                            return;
+                        }
                     }
+                    thrownfruit[i].isitonscreen = 0;
                 }
             }
 
@@ -1173,8 +1218,14 @@ void UpdateFruitThrow(){
     
     if(fruitsOnScreen == 0){
         wave++;
-        fruit_throw_count = FruitCount(maxfruits);
-        for(int i = 0; i < fruit_throw_count; i++) InitializeFruitThrow(i);
+        if (wave > 0 && wave % 10 == 0 && missedFruits <= 3) {
+            isFrenzy = true;
+            for(int i = 0; i < 50; i++) InitializeFruitThrow(i);
+        } else {
+            isFrenzy = false;
+            fruit_throw_count = FruitCount(10);
+            for(int i = 0; i < fruit_throw_count; i++) InitializeFruitThrow(i);
+        }
     }
 }
 
@@ -1223,14 +1274,14 @@ void DrawTrails(){
 
 void DrawAsset(Texture2D fruit, float CentreX, float CentreY, float fruitwidth, float rotation){
     Vector2 center = {fruitwidth/2, fruitwidth/2};
-    float temp = (fruit.width - fruit.height)/2;
     DrawTexturePro(fruit,
         (Rectangle){0 , 0, fruit.width, fruit.height}, 
-        (Rectangle){CentreX, CentreY + temp, fruitwidth, fruitwidth - temp}, 
+        (Rectangle){CentreX, CentreY, fruitwidth, fruitwidth}, 
         center, rotation, WHITE);
 }
 
 void UnloadAssets(){
+    UnloadRenderTexture(targetBuffer);
     UnloadTexture2D(fruit, 20);
     UnloadTexture2D(deadfruitA, 20);
     UnloadTexture2D(deadfruitB, 20);
@@ -1240,6 +1291,10 @@ void UnloadAssets(){
     UnloadTexture2D(PreviousSplatter, maxSplatters);
     UnloadTexture(KNIFE);
     UnloadTexture(EMPTY);
+    UnloadTexture(WhiteSlash);
+    UnloadTexture(Menu_Map);
+    UnloadTexture(BACKGROUND);
+    UnloadTexture(MusicIcon);
 
     UnloadSounds();
     free(PreviousSplatterPosition);
@@ -1260,6 +1315,10 @@ void UnloadSounds(){
     UnloadSound(HIGHSCORE);
     UnloadSound(MENU);
     UnloadSound(PLAYFN);
+    UnloadSound(PLAYPRESSED);
+    UnloadSound(COUNTDOWN);
+    UnloadSound(COMBO);
+    UnloadSound(SUPERCOMBO);
 }
 
 void UnloadTexture2D(Texture2D *array, int elements){
