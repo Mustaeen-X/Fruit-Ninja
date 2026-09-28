@@ -1,12 +1,13 @@
+ 1128136704
+ÍÌ:ÃıœÄ 5190
 Ruhan 3820
-testrun 2215
-Player 2040
-mustaeen 1880
-Ruhaniiii 1135
-meow 975
+Player 2590
+ 1880
+ 975
 Alvee 810
-Ma 735
-Shams 670
-purno 645
-Baba 480
+ 670
+purn 645
 Supro 220
+Ma 16
+testrun 0
+ -992779031

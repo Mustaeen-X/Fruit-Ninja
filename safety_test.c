@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DEBUG 0
+#define DEBUG 1
 #define ScreenWidth 1400
 #define ScreenHeight 900
 #define TINT 0
@@ -31,7 +31,7 @@
 #define STATE_HOWTOPLAY 7
 #define STATE_CREDITS 8
 #define strikes 5
-#define maxfruits 50
+#define maxfruits 30
 #define throwspeed 2000
 #define slidespeed 5000
 #define slidedespeed .3
