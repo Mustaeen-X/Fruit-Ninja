@@ -325,6 +325,7 @@ void LoadAssets(){
         maxdim = temp.width >= temp.height? temp.width : temp.height;
         ImageResizeCanvas(&temp, maxdim, maxdim, (maxdim - temp.width) / 2 , (maxdim - temp.height) / 2, BLANK);
         fruit[i] = LoadTextureFromImage(temp);
+        UnloadImage(temp);
 
         sprintf(path, "assets/sprites/fruits/%da.png", i+1);
         temp = LoadImage(path);
@@ -365,6 +366,7 @@ void LoadAssets(){
         maxdim = temp.width >= temp.height? temp.width : temp.height;
         ImageResizeCanvas(&temp, maxdim, maxdim, (maxdim - temp.width) / 2 , (maxdim - temp.height) / 2, BLANK);
         bomb[i] = LoadTextureFromImage(temp);
+        UnloadImage(temp);
 
         sprintf(path, "assets/sprites/Bomb/Bomb%da.png", i+1);
         temp = LoadImage(path);
