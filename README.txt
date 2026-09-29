@@ -12,7 +12,7 @@ Authors: Mustaeen - 2505097, Ruhan - 2505119
 ## To compile and run the project:
 
 - Download the ZIP file (Drop Down Menu of the Green Button "Code")
-- Extract the FRUIT_NINJA.zip file
+- Extract the Fruit-Ninja-main.zip file
 - *[Optional]:* If a custom raylib configuration is set-up for the windows system,
   then copy the system's custom configured .vscode/ and raylib/ folders
 - Open the Fruit-Ninja-main.c file with *Visual Studio Code*
