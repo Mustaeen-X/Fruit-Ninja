@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DEBUG 1
+#define DEBUG 0
 #define ScreenWidth 1400
 #define ScreenHeight 900
 #define TINT 0
@@ -40,6 +40,7 @@
 #define SILVER (Color){192,192,192,255}
 #define BRONZE (Color){205,127,50,255}
 #define YOLK CLITERAL(Color) {230, 232, 93 ,255}
+#define FRENZYFRUITS 15
 
 typedef struct {
     Vector2 position;
@@ -79,7 +80,7 @@ char currentPlayer[MAX_NAME_LEN + 1] = "\0";
 
 int fruit_throw_count, wave=0, MusicVolume=1, SFXVolume=1, PAUSE=0, Cursor=1, Close=0, totalPlayers = 0, tint=TINT, score = 0, highScore = 0, penalty, missedFruits = 0, lastComboHit = 0, comboCount = 0, currentState = STATE_LOADING, pointBonus=10, PageCount = 1;
 
-float gameOverTimer = 0, countdowntimer = 0, comboDisplayTimer = 0, flickertimer=0, scoreslidetimer=0, scoreslidespeed=0, scoretextX, striketextX=0, strikeslidespeed, pointshowmaxtimer=1, loadingtimer=7;
+float gameOverTimer = 0, countdowntimer = 0, comboDisplayTimer = 0, flickertimer=0, scoreslidetimer=0, scoreslidespeed=0, scoretextX, striketextX=0, strikeslidespeed, pointshowmaxtimer=1, loadingtimer=7, throwtimer=0;
 
 bool typingName = false, isNewHighScore = false, isFrenzy = false;
 
@@ -473,6 +474,8 @@ void ResetGame() {
     wave = 1;
     comboCount = 0;
     comboDisplayTimer = 0;
+    fruit_throw_count = 0;
+    throwtimer = 0;
     for (int i = 0; i < maxfruits; i++) thrownfruit[i].isitonscreen = 0;
     for (int i = 0; i < 10; i++) scoreshown[i].isitonscreen = 0;
     InitializeFruitThrow(0);
@@ -773,20 +776,35 @@ void ShowHowToPlay(){
                 sprintf(text, 
                     "It will also break the combo you had for a while.");
                 DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 620, 30, WHITE);
+                break;
+            case 4:
+                sprintf(text, 
+                    "After certain fruit waves, you will encounter a FRENZY wave!");
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 200, 30, WHITE);
+                sprintf(text, 
+                    "There will be many fruits on FRENZY wave, slash them for bonus points!");
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 400, 30, WHITE);
+                DrawText("Frenzy!!!", ScreenWidth/2 - MeasureText("Frenzy!!!", 65)/2, 265, 65, GOLD);
+                DrawRectangleLinesEx(
+                    (Rectangle){
+                        ScreenWidth/2 - MeasureText("Frenzy!!!", 65)/2 - 15,
+                        250,
+                        MeasureText("Frenzy!!!", 65) + 30,
+                        100},
+                        6, GOLD);
                 sprintf(text, 
                     "Try to score as high as you can!");
-                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 700, 30, WHITE);
-                break;
+                DrawText(text, ScreenWidth/2 - MeasureText(text, 30)/2, 600, 30, WHITE);
         }
 
     bool hoveringNext = CheckCollisionPointRec(GetMousePosition(), NextButton);
-    if(PageCount < 3){
+    if(PageCount < 4){
         DrawRectangleRec(NextButton, hoveringNext ? RED : MAROON);
         DrawRectangleLinesEx(NextButton, 4, DARKGRAY);
         DrawText("NEXT", NextButton.x + NextButton.width/2 - MeasureText("NEXT", 35)/2, NextButton.y + 12, 35, WHITE);
     }
 
-    if (hoveringNext && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && PageCount < 3) {
+    if (hoveringNext && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && PageCount < 4) {
         PageCount++;
     }
 
@@ -877,7 +895,15 @@ void DrawScoreAndStrikes() {
     if (isFrenzy) {
         int alpha = ((int)(GetTime() * 8) % 2 == 0) ? 255 : 80;
         Color goldFlicker = (Color){ 255, 215, 0, alpha };
+        Color goldFlicker2 = (Color){ 255, 163, 0, alpha };
         DrawText("Frenzy!!!", ScreenWidth/2 - MeasureText("Frenzy!!!", 65)/2, 30, 65, goldFlicker);
+        DrawRectangleLinesEx(
+            (Rectangle){
+                ScreenWidth/2 - MeasureText("Frenzy!!!", 65)/2 - 15,
+                15,
+                MeasureText("Frenzy!!!", 65) + 30,
+                100},
+                6, goldFlicker2);
     }
 
     if (comboDisplayTimer > 0) {
@@ -1088,7 +1114,7 @@ void PlayGame(){
                         if (comboCount % 10 == 0 && comboCount <= 50) {
                             comboDisplayTimer = 2;
                             lastComboHit = comboCount;
-                            if(SFXVolume) PlaySound(comboCount==20? SUPERCOMBO:COMBO);
+                            if(SFXVolume) PlaySound(comboCount==50? SUPERCOMBO:COMBO);
                         }
                     }
                     thrownfruit[i].sliced = 1;
@@ -1171,7 +1197,9 @@ void UpdateFruitThrow(){
             }
             else if (fuse_frame == 1) DrawAsset(bomb[bomb_index], thrownfruit[i].position.x, thrownfruit[i].position.y, BombWidth, thrownfruit[i].rotation );
             else DrawAsset(bombfuse[bomb_index], thrownfruit[i].position.x, thrownfruit[i].position.y, BombWidth, thrownfruit[i].rotation);
-            if(thrownfruit[i].position.y > ScreenHeight+1000 && thrownfruit[i].speed.y > 0) thrownfruit[i].isitonscreen = 0;
+
+            int screenLimit = wave < 7? 600 : 200;
+            if(thrownfruit[i].position.y > ScreenHeight+screenLimit && thrownfruit[i].speed.y > 0) thrownfruit[i].isitonscreen = 0;
         }
 
         else{
@@ -1218,13 +1246,28 @@ void UpdateFruitThrow(){
     
     if(fruitsOnScreen == 0){
         wave++;
-        if (wave > 0 && wave % 10 == 0 && missedFruits <= 3) {
+        if (wave > 0 && wave % 15 == 0 && missedFruits <= 3) {
             isFrenzy = true;
-            for(int i = 0; i < 50; i++) InitializeFruitThrow(i);
+            for(int i = 0; i < FRENZYFRUITS; i++) InitializeFruitThrow(i);
         } else {
             isFrenzy = false;
             fruit_throw_count = FruitCount(10);
+            throwtimer=0;
+        }
+    }
+
+    if (fruit_throw_count > 0) {
+        if(wave < 7){
             for(int i = 0; i < fruit_throw_count; i++) InitializeFruitThrow(i);
+            fruit_throw_count = 0;
+        }
+        else{
+            throwtimer -= dt;
+            while (throwtimer <= 0 && fruit_throw_count > 0) {
+            InitializeFruitThrow(fruit_throw_count - 1);
+            fruit_throw_count--;
+            throwtimer += 0.3;
+            }
         }
     }
 }

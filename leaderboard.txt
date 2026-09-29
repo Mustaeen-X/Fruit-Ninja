@@ -1,13 +1,2 @@
- 1128136704
-ÍÌ:ÃıœÄ 5190
-Ruhan 3820
-Player 2590
- 1880
- 975
-Alvee 810
- 670
-purn 645
-Supro 220
-Ma 16
-testrun 0
- -992779031
+Test 3015
+Player 1025
