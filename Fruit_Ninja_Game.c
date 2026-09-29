@@ -543,6 +543,8 @@ void ShowMenu(){
     if (typingName) {
         int key = GetCharPressed();
         while (key > 0) {
+            if (key == ' ') key = '_';
+            
             if ((key >= 32) && (key <= 125) && (strlen(currentPlayer) < MAX_NAME_LEN)) {
                 currentPlayer[strlen(currentPlayer)] = (char)key;
                 currentPlayer[strlen(currentPlayer)+1] = '\0';
