@@ -14,7 +14,7 @@ Authors: Mustaeen - 2505097, Ruhan - 2505119
 - Extract the FRUIT_NINJA.zip file
 - *[Optional]:* If a custom raylib configuration is set-up for the windows system,
   then copy the system's custom configured .vscode/ and raylib/ folders
-- Open the Fruit_Ninja_Game.c file with *Visual Studio Code*
+- Open the Fruit-Ninja-main.c file with *Visual Studio Code*
 - Press F5 to compile and run the game
 
 
