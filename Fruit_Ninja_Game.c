@@ -154,13 +154,13 @@ int main(){
         }
 
         float scale = fminf((float)GetScreenWidth() / ScreenWidth, (float)GetScreenHeight() / ScreenHeight);
-        if (scale <= 0) scale = 1.0f;
+        if (scale <= 0) scale = 1.0;
 
-        float padX = (GetScreenWidth() - (ScreenWidth * scale)) * 0.5f;
-        float padY = (GetScreenHeight() - (ScreenHeight * scale)) * 0.5f;
+        float padX = (GetScreenWidth() - (ScreenWidth * scale)) * 0.5;
+        float padY = (GetScreenHeight() - (ScreenHeight * scale)) * 0.5;
 
         SetMouseOffset((int)-padX, (int)-padY);
-        SetMouseScale(1.0f / scale, 1.0f / scale);
+        SetMouseScale(1.0 / scale, 1.0 / scale);
 
         BeginTextureMode(targetBuffer);
         ClearBackground(BLACK);
@@ -180,9 +180,9 @@ int main(){
         BeginDrawing();
         ClearBackground(BLACK);
         DrawTexturePro(targetBuffer.texture,
-            (Rectangle){ 0.0f, 0.0f, (float)targetBuffer.texture.width, (float)-targetBuffer.texture.height },
+            (Rectangle){ 0.0, 0.0, (float)targetBuffer.texture.width, (float)-targetBuffer.texture.height },
             (Rectangle){ padX, padY, (float)ScreenWidth * scale, (float)ScreenHeight * scale },
-            (Vector2){ 0.0f, 0.0f }, 0.0f, WHITE);
+            (Vector2){ 0.0, 0.0}, 0.0, WHITE);
         EndDrawing(); 
     }
 
@@ -508,7 +508,7 @@ void ShowMenu(){
         if (menuPos.y >= 0) {
             menuPos.y = 0;
             menuSpeed.y = -menuSpeed.y * slidedespeed;
-            if (menuSpeed.y < 150 && menuSpeed.y > -150) menuSpeed.y = 0.0f;
+            if (menuSpeed.y < 150 && menuSpeed.y > -150) menuSpeed.y = 0.0;
         }
     }
 
