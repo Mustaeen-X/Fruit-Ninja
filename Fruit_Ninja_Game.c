@@ -1278,7 +1278,7 @@ int FruitCount(int maxfruitno){
         else if(wave < 12) out = 2*maxfruitno/10;
         else if(wave < 20) out = 3*maxfruitno/10;
         else if(wave < 50) out = (wave/5)*maxfruitno/10;
-        else out = GetRandomValue(1, maxfruitno);
+        else out = GetRandomValue(4, maxfruitno);
         return out;
 }
 
