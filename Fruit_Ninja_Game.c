@@ -39,7 +39,7 @@
 #define MAX_PLAYERS 100
 #define SILVER (Color){192,192,192,255}
 #define BRONZE (Color){205,127,50,255}
-#define YOLK CLITERAL(Color) {230, 232, 93 ,255}
+#define YOLK (Color){230, 232, 93 ,255}
 #define FRENZYFRUITS 15
 
 typedef struct {
