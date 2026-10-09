@@ -19,6 +19,9 @@ Authors: Mustaeen - 2505097, Ruhan - 2505119
 - Open the Fruit_Ninja_Game.c file with *Visual Studio Code*
 - Press F5 to compile and run the game
 
+If you already had raylib in your device but still having issues running this file, try replacing your ".vscode" stuffs from your game into this file.
+
+Make sure the "assets" folder is present in the file.
 
 N.B.: The developers are Windows users, so some issues with
 macOS and Linux systems may persist, although no compilation issues were found
