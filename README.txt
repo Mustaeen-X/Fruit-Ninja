@@ -11,6 +11,7 @@ Authors: Mustaeen - 2505097, Ruhan - 2505119
 
 ## To compile and run the project:
 
+- Ensure msys64 setup is configured on your device
 - Download the ZIP file (Drop Down Menu of the Green Button "Code")
 - Extract the Fruit-Ninja-main.zip file
 - *[Optional]:* If a custom raylib configuration is set-up for the windows system,
